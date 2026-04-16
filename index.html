@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script>
+// Reset iOS zoom after keyboard dismisses
+function resetViewport(){
+  const mv=document.querySelector('meta[name=viewport]');
+  mv.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';
+}
+document.addEventListener('focusout',()=>setTimeout(resetViewport,100));
+</script>
+<title>Astro Lab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#020510;--panel:#070c1c;--border:rgba(100,180,255,0.25);--accent:#4af;--gold:#ffe566;--card-bg:rgba(6,12,32,0.98);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:#cde;font-family:'Share Tech Mono',monospace;min-height:100dvh;overflow-x:hidden;user-select:none;-webkit-user-select:none;}
+#starfield{position:fixed;inset:0;pointer-events:none;z-index:0;}
+@keyframes tw{from{opacity:0.05}to{opacity:0.8}}
+@keyframes afl{from{opacity:0.25;transform:scale(0.85)}to{opacity:1;transform:scale(1.2)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{from{box-shadow:0 0 8px var(--accent)}to{box-shadow:0 0 28px var(--accent),0 0 60px rgba(68,170,255,0.3)}}
+
+/* ═══ SCREEN SYSTEM ═══ */
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ═══ COG WHEEL ═══ */
+#cogBtn{position:fixed;bottom:14px;right:14px;z-index:500;width:38px;height:38px;border-radius:50%;background:rgba(10,20,50,0.9);border:1px solid rgba(100,180,255,0.3);color:#456;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color 0.2s,border-color 0.2s;}
+#cogBtn:active{transform:scale(0.9);}
+#cogModal{position:fixed;inset:0;z-index:900;background:rgba(0,4,18,0.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px;}
+#cogModal.open{display:flex;}
+.cog-box{background:var(–card-bg);border:1px solid rgba(100,180,255,0.35);border-radius:16px;padding:24px 20px;width:100%;max-width:320px;text-align:center;}
+.cog-box h3{font-family:‘Orbitron’,monospace;font-size:12px;color:#fff;letter-spacing:2px;margin-bottom:16px;}
+.cog-box p{font-size:10px;color:#789;margin-bottom:14px;line-height:1.6;}
+#cogInput{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(100,180,255,0.3);border-radius:8px;padding:10px;color:#fff;font-family:‘Share Tech Mono’,monospace;font-size:14px;text-align:center;letter-spacing:3px;margin-bottom:12px;outline:none;}
+.cog-submit{width:100%;background:linear-gradient(135deg,#0f3870,#061a44);border:2px solid #4af;border-radius:8px;color:#4af;font-family:‘Orbitron’,monospace;font-size:11px;font-weight:700;padding:11px;cursor:pointer;letter-spacing:2px;}
+.cog-cancel{width:100%;background:none;border:1px solid rgba(100,180,255,0.2);border-radius:8px;color:#567;font-family:‘Share Tech Mono’,monospace;font-size:10px;padding:8px;cursor:pointer;margin-top:8px;}
+#cogMsg{font-size:10px;color:#f84;margin-top:6px;min-height:16px;}
+
+/* ═══ TITLE SCREEN ═══ */
+#titleScreen{background:linear-gradient(180deg,#010210 0%,#020518 100%);align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;}
+.title-hero{width:100%;display:flex;flex-direction:column;align-items:center;padding:28px 24px 16px;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(30,60,180,0.22),transparent);}
+.title-logo{font-family:‘Orbitron’,monospace;font-size:28px;font-weight:900;color:#fff;letter-spacing:5px;line-height:1;text-shadow:0 0 40px rgba(68,170,255,0.5);}
+.title-sub{font-size:9px;color:#4af;letter-spacing:3px;margin-top:4px;text-transform:uppercase;}
+.title-form{width:100%;max-width:340px;padding:0 16px 12px;display:flex;flex-direction:column;gap:8px;}
+.title-form label{font-size:9px;color:#567;letter-spacing:2px;margin-bottom:1px;display:block;}
+.title-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(100,180,255,0.25);border-radius:8px;padding:9px 12px;color:#fff;font-family:‘Share Tech Mono’,monospace;font-size:16px;outline:none;transition:border-color 0.2s;}
+.title-input:focus{border-color:#4af;}
+.period-row{display:flex;gap:6px;}
+.period-btn{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(100,180,255,0.2);border-radius:7px;padding:8px 4px;color:#789;font-family:‘Share Tech Mono’,monospace;font-size:11px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.period-btn.sel{background:rgba(68,170,255,0.12);border-color:#4af;color:#4af;box-shadow:0 0 8px rgba(68,170,255,0.2);}
+.activity-btns{width:100%;max-width:340px;padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;}
+.act-btn{width:100%;padding:11px 14px;border-radius:12px;border:1px solid rgba(100,180,255,0.25);background:rgba(8,15,40,0.8);display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.22s;text-align:left;}
+.act-btn:active{transform:scale(0.97);}
+.act-btn:hover{border-color:#4af;box-shadow:0 0 16px rgba(68,170,255,0.15);}
+.act-icon{font-size:22px;flex-shrink:0;width:34px;text-align:center;}
+.act-info h3{font-family:‘Orbitron’,monospace;font-size:10px;font-weight:700;color:#fff;letter-spacing:1px;}
+.act-info p{font-size:9px;color:#678;margin-top:2px;line-height:1.3;}
+.act-badge{font-size:7px;padding:2px 6px;border-radius:4px;background:rgba(68,170,255,0.12);color:#4af;letter-spacing:1px;margin-top:4px;display:inline-block;}
+.act-badge.soon{background:rgba(100,100,100,0.15);color:#567;}
+
+/* ═══ DIRECTIONS POPUP ═══ */
+#directionsModal{position:fixed;inset:0;z-index:800;background:rgba(0,4,18,0.88);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;}
+#directionsModal.open{display:flex;}
+.dir-box{background:var(–card-bg);border:1px solid rgba(100,180,255,0.35);border-radius:16px;width:100%;max-width:360px;overflow:hidden;max-height:90dvh;overflow-y:auto;animation:fadeIn 0.3s ease;}
+.dir-header{padding:12px 16px 10px;border-bottom:1px solid rgba(100,180,255,0.15);display:flex;align-items:center;gap:10px;}
+.dir-icon{font-size:24px;}
+.dir-title{font-family:‘Orbitron’,monospace;font-size:12px;font-weight:700;color:#fff;letter-spacing:1px;}
+.dir-subtitle{font-size:9px;color:#7ab;margin-top:2px;letter-spacing:1px;}
+.dir-body{padding:10px 16px;}
+.dir-step{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;}
+.dir-num{width:20px;height:20px;border-radius:50%;background:rgba(68,170,255,0.15);border:1px solid rgba(68,170,255,0.4);color:#4af;font-family:‘Orbitron’,monospace;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.dir-text{font-size:10px;color:#9bc;line-height:1.5;}
+.dir-text strong{color:#ffe566;}
+.dir-footer{padding:10px 16px 14px;border-top:1px solid rgba(100,180,255,0.1);}
+.dir-start{width:100%;background:linear-gradient(135deg,#0f3870,#061a44);border:2px solid #4af;border-radius:10px;color:#fff;font-family:‘Orbitron’,monospace;font-size:11px;font-weight:700;padding:12px;cursor:pointer;letter-spacing:2px;animation:pulse 1.2s ease infinite alternate;}
+
+/* ═══ HR DIAGRAM SCREEN ═══ */
+#hrScreen{background:var(–bg);}
+#hrScreen header{position:relative;z-index:10;text-align:center;padding:8px 16px 4px;border-bottom:1px solid rgba(100,180,255,0.3);background:rgba(2,5,16,0.95);flex-shrink:0;}
+#hrScreen header h1{font-family:‘Orbitron’,monospace;font-size:13px;font-weight:900;letter-spacing:3px;color:#fff;}
+#hrScreen header p{font-size:8px;color:#7a9;margin-top:1px;letter-spacing:1px;}
+.progress-bar{margin:4px auto 0;max-width:340px;height:4px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#4af,#a4f,#fa4);border-radius:3px;transition:width 0.5s ease;width:0%;}
+.progress-label{font-size:8px;color:#567;margin-top:2px;letter-spacing:1px;}
+#hrMain{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;padding:6px 4px 0;}
+.diagram-wrap{position:relative;width:100%;max-width:420px;}
+.y-label-left{position:absolute;left:0;top:0;bottom:28px;width:42px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding:2px 3px 0 0;}
+.y-label-right{position:absolute;right:0;top:0;bottom:28px;width:42px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:2px 0 0 3px;}
+.y-label-left span,.y-label-right span{font-size:7px;color:#9bc;line-height:1;white-space:nowrap;font-weight:bold;}
+.axis-title-v{position:absolute;top:0;bottom:28px;width:10px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-family:‘Orbitron’,monospace;font-size:6px;color:#6ae;letter-spacing:2px;white-space:nowrap;pointer-events:none;}
+.axis-title-v.left{left:0;transform:rotate(180deg);}
+.axis-title-v.right{right:0;}
+#hrCanvas{display:block;width:calc(100% - 84px);margin:0 42px;touch-action:none;}
+.x-labels{display:flex;justify-content:space-between;padding:2px 42px 0;}
+.x-labels span{font-size:7px;color:#9bc;font-weight:bold;}
+.x-axis-title{text-align:center;font-family:‘Orbitron’,monospace;font-size:6px;color:#6ae;letter-spacing:1px;margin:2px 0 3px;}
+#coordPanel{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 8px 3px;background:rgba(0,10,30,0.85);border:1px solid rgba(255,220,50,0.25);border-radius:7px;margin:3px 6px 3px;font-family:‘Share Tech Mono’,monospace;font-size:10px;opacity:0.35;transition:opacity 0.2s;}
+#coordPanel.active{opacity:1;border-color:rgba(255,220,50,0.7);box-shadow:0 0 12px rgba(255,220,50,0.2);}
+#coordTemp,#coordLum{color:#ffe566;font-weight:bold;letter-spacing:0.5px;}
+#coordMag{color:#aaddff;font-weight:bold;}
+.coord-sep{color:rgba(255,255,255,0.25);}
+#snapRing{position:absolute;border-radius:50%;pointer-events:none;display:none;border:2px solid #4f8;z-index:20;transform:translate(-50%,-50%);}
+@keyframes snapPulse{from{box-shadow:0 0 8px #4f8;opacity:0.7}to{box-shadow:0 0 24px #4f8;opacity:1}}
+.queue-section{width:100%;max-width:420px;padding:0 6px;margin-top:4px;}
+.queue-title{font-family:‘Orbitron’,monospace;font-size:8px;color:#567;letter-spacing:2px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.next-arrow{color:#4af;font-size:12px;animation:afl 0.55s ease infinite alternate;}
+.queue-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:5px;scrollbar-width:none;}
+.queue-scroll::-webkit-scrollbar{display:none;}
+.star-chip{flex:0 0 auto;background:var(–panel);border:1px solid rgba(100,160,255,0.2);border-radius:7px;padding:5px 8px;cursor:pointer;transition:border-color 0.2s,transform 0.15s,box-shadow 0.2s;display:flex;align-items:center;gap:5px;min-width:88px;}
+.star-chip:active{transform:scale(0.93);}
+.star-chip.next-chip{border-color:#4af;animation:chipPulse 1s ease infinite alternate;}
+@keyframes chipPulse{from{box-shadow:0 0 8px rgba(68,170,255,0.3)}to{box-shadow:0 0 22px rgba(68,170,255,0.9)}}
+.star-chip.active-chip{border-color:#fa4;box-shadow:0 0 12px rgba(255,170,68,0.5);}
+.star-chip.plotted-chip{opacity:0.3;pointer-events:none;border-color:rgba(40,70,40,0.3);}
+.chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.chip-name{font-size:8px;color:#bcd;white-space:nowrap;}
+/* Joystick */
+#dragBanner{position:fixed;top:0;left:0;right:0;z-index:9000;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 16px;background:rgba(0,15,50,0.93);border-bottom:2px solid #4af;opacity:0;transition:opacity 0.3s;font-family:‘Orbitron’,monospace;font-size:10px;color:#4af;letter-spacing:2px;}
+#dragBanner.show{opacity:1;}
+.afl-s{font-size:15px;animation:afl 0.5s ease infinite alternate;}
+#joystickPanel{display:none;width:100%;max-width:420px;background:rgba(4,10,28,0.97);border-top:1px solid rgba(100,180,255,0.25);padding:8px 14px 10px;z-index:50;}
+#joystickPanel.active{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#joystickBase{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(30,60,120,0.9),rgba(8,15,40,0.95));border:2px solid rgba(100,180,255,0.35);box-shadow:0 0 20px rgba(68,170,255,0.15);position:relative;touch-action:none;flex-shrink:0;}
+#joystickKnob{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#6af,#1a4aaa);border:2px solid #4af;box-shadow:0 0 14px rgba(68,170,255,0.8);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;}
+#joystickKnob.thrusting{background:radial-gradient(circle at 35% 35%,#ffe566,#ff8800);border-color:#ffa500;box-shadow:0 0 20px rgba(255,160,0,0.9);}
+#joyLabel{font-family:‘Orbitron’,monospace;font-size:7px;color:#456;text-align:center;margin-top:4px;letter-spacing:1px;}
+#flightRight{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;}
+#thrustBtn{width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe566,#d4500a);border:3px solid #fa4;box-shadow:0 0 18px rgba(255,160,0,0.5);font-family:‘Orbitron’,monospace;font-size:8px;font-weight:900;color:#fff;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;touch-action:none;-webkit-tap-highlight-color:transparent;line-height:1.2;}
+#thrustBtn.pressed{background:radial-gradient(circle at 40% 35%,#fff,#ffaa00);box-shadow:0 0 40px rgba(255,200,0,1),0 0 80px rgba(255,160,0,0.6);transform:scale(0.94);}
+#thrustLabel{font-family:‘Orbitron’,monospace;font-size:7px;color:#456;letter-spacing:1px;}
+#flightInfo{font-family:‘Share Tech Mono’,monospace;font-size:9px;color:#567;text-align:center;line-height:1.7;}
+.snap-near{color:#4f8;animation:afl 0.5s ease infinite alternate;}
+#lockBtn{background:linear-gradient(135deg,#0a3a18,#041a0a);border:2px solid #4f8;border-radius:8px;color:#4f8;font-family:‘Orbitron’,monospace;font-size:9px;font-weight:700;padding:7px 14px;cursor:pointer;letter-spacing:1px;display:none;touch-action:none;}
+#lockBtn.show{display:block;animation:lockGlow 0.6s ease infinite alternate;}
+@keyframes lockGlow{from{box-shadow:0 0 6px #4f8}to{box-shadow:0 0 22px #4f8,0 0 44px #4f844}}
+/* HR Card */
+.card-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,4,18,0.82);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.card-overlay.visible{opacity:1;pointer-events:all;}
+.star-card{background:var(–card-bg);border:1px solid rgba(100,180,255,0.4);border-radius:18px;width:100%;max-width:350px;overflow:hidden;box-shadow:0 0 50px rgba(68,170,255,0.18),0 24px 70px rgba(0,0,0,0.9);transform:translateY(20px) scale(0.95);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.card-overlay.visible .star-card{transform:translateY(0) scale(1);}
+.card-header{padding:14px 16px 10px;border-bottom:1px solid rgba(100,180,255,0.18);display:flex;align-items:center;gap:12px;position:relative;}
+.card-visual{width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.card-titles h2{font-family:‘Orbitron’,monospace;font-size:13px;font-weight:700;color:#fff;line-height:1.2;}
+.card-class{font-size:9px;color:#7ab;margin-top:3px;letter-spacing:1px;}
+.card-close{position:absolute;top:8px;right:10px;background:none;border:none;color:#456;font-size:18px;cursor:pointer;padding:4px;line-height:1;}
+.card-body{padding:10px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.card-stat{background:rgba(255,220,50,0.06);border:1px solid rgba(255,220,50,0.15);border-radius:8px;padding:7px 10px;}
+.stat-label{font-size:11px;color:#ffe566;letter-spacing:1px;text-transform:uppercase;font-weight:bold;text-shadow:0 0 8px rgba(255,230,80,0.7);}
+.stat-value{font-size:15px;color:#fff;margin-top:3px;font-weight:bold;text-shadow:0 0 6px rgba(255,255,255,0.4);}
+.card-desc{padding:0 16px 8px;font-size:10px;line-height:1.6;color:#89a;}
+.card-classify{margin:0 16px 10px;background:rgba(68,170,255,0.06);border:1px solid rgba(68,170,255,0.2);border-radius:8px;padding:7px 10px;font-size:10px;color:#9bc;line-height:1.5;}
+.card-classify strong{color:#4af;}
+.card-footer{padding:10px 16px 14px;border-top:1px solid rgba(100,180,255,0.12);display:flex;flex-direction:column;gap:8px;}
+@keyframes btnGlow{from{box-shadow:0 0 10px rgba(68,170,255,0.4)}to{box-shadow:0 0 30px rgba(68,170,255,1),0 0 60px rgba(68,170,255,0.4)}}
+.plot-btn{width:100%;background:linear-gradient(135deg,#0f3870,#061a44);border:2px solid #4af;border-radius:10px;color:#fff;font-family:‘Orbitron’,monospace;font-size:11px;font-weight:700;letter-spacing:2px;padding:13px;cursor:pointer;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;animation:btnGlow 1.2s ease infinite alternate;}
+.plot-btn:active{transform:scale(0.97);}
+.plot-btn.plotted-btn{background:linear-gradient(135deg,#0a3a18,#041a0a);border-color:#4f8;color:#4f8;animation:none;}
+.review-btn{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:‘Share Tech Mono’,monospace;font-size:10px;padding:8px;cursor:pointer;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.review-panel{display:none;background:rgba(10,20,50,0.95);border:1px solid rgba(100,180,255,0.22);border-radius:10px;padding:10px 12px;margin:0 16px 10px;font-size:10px;color:#9bc;line-height:1.8;}
+.review-panel.open{display:block;}
+.review-panel strong{color:#4af;}
+/* HR Complete */
+.complete-banner{position:fixed;inset:0;z-index:300;background:rgba(0,4,18,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:30px;opacity:0;pointer-events:none;transition:opacity 0.5s;}
+.complete-banner.show{opacity:1;pointer-events:all;}
+.complete-banner h2{font-family:‘Orbitron’,monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;}
+.complete-banner p{font-size:12px;color:#89a;max-width:260px;}
+.restart-btn{background:transparent;border:1px solid #4af;color:#4af;font-family:‘Orbitron’,monospace;font-size:11px;padding:11px 26px;border-radius:8px;cursor:pointer;letter-spacing:2px;}
+/* Explore overlay */
+#exploreOverlay{position:fixed;inset:0;z-index:350;display:none;flex-direction:column;background:rgba(2,5,16,0.97);}
+
+/* ═══ MAGNITUDE SCREEN ═══ */
+#magScreen{background:var(–bg);overflow:hidden;}
+.mag-header{flex-shrink:0;padding:9px 14px 7px;border-bottom:1px solid rgba(100,180,255,0.25);background:rgba(2,5,16,0.96);display:flex;align-items:center;gap:10px;}
+.mag-header h1{font-family:‘Orbitron’,monospace;font-size:11px;font-weight:900;color:#fff;letter-spacing:2px;flex:1;}
+.back-btn{background:none;border:1px solid rgba(100,180,255,0.25);border-radius:6px;color:#7ab;font-family:‘Share Tech Mono’,monospace;font-size:9px;padding:4px 9px;cursor:pointer;letter-spacing:1px;flex-shrink:0;}
+.mag-tabs{display:flex;border-bottom:1px solid rgba(100,180,255,0.15);flex-shrink:0;}
+.mag-tab{flex:1;padding:8px;text-align:center;font-family:‘Orbitron’,monospace;font-size:7px;letter-spacing:1px;color:#456;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.mag-tab.active{color:#4af;border-bottom-color:#4af;}
+.mag-body{flex:1;overflow-y:auto;overflow-x:hidden;}
+
+/* Apparent magnitude ranking */
+#apparentPanel{padding:12px;}
+.mag-intro{background:rgba(68,170,255,0.05);border:1px solid rgba(68,170,255,0.18);border-radius:10px;padding:12px;font-size:10px;color:#9bc;line-height:1.6;margin-bottom:12px;}
+.mag-intro strong{color:#ffe566;}
+.rank-instruction{font-family:‘Orbitron’,monospace;font-size:9px;color:#4af;letter-spacing:1px;margin-bottom:10px;text-align:center;}
+.rank-list{display:flex;flex-direction:column;gap:6px;}
+.rank-item{display:flex;align-items:center;gap:10px;background:rgba(8,16,40,0.9);border:1px solid rgba(100,180,255,0.18);border-radius:10px;padding:8px 12px;cursor:grab;transition:all 0.2s;touch-action:none;}
+.rank-item.dragging{opacity:0.5;border-color:#fa4;box-shadow:0 0 12px rgba(255,170,68,0.4);}
+.rank-item.drag-over{border-color:#4af;box-shadow:0 0 10px rgba(68,170,255,0.3);}
+.rank-num{font-family:‘Orbitron’,monospace;font-size:11px;color:#345;width:20px;text-align:center;flex-shrink:0;}
+.rank-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center;}
+.rank-info{flex:1;}
+.rank-name{font-size:11px;color:#cde;font-weight:bold;}
+.rank-hint{font-size:9px;color:#456;margin-top:1px;}
+.rank-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.check-btn{width:100%;background:linear-gradient(135deg,#0f3870,#061a44);border:2px solid #4af;border-radius:10px;color:#fff;font-family:‘Orbitron’,monospace;font-size:11px;font-weight:700;padding:13px;cursor:pointer;letter-spacing:2px;margin-top:14px;}
+.check-result{margin-top:10px;padding:12px;border-radius:10px;font-size:10px;line-height:1.6;display:none;}
+.check-result.show{display:block;}
+.check-result.wrong{background:rgba(255,80,60,0.08);border:1px solid rgba(255,80,60,0.3);color:#f98;}
+.check-result.right{background:rgba(60,220,120,0.08);border:1px solid rgba(60,220,120,0.3);color:#6fa;}
+
+/* Absolute magnitude panel */
+#absolutePanel{padding:12px;display:none;}
+#absolutePanel.show{display:block;}
+.abs-intro{background:rgba(255,220,50,0.05);border:1px solid rgba(255,220,50,0.2);border-radius:10px;padding:12px;font-size:10px;color:#9bc;line-height:1.6;margin-bottom:14px;}
+.abs-intro strong{color:#ffe566;}
+.abs-stage{margin-bottom:16px;}
+.abs-stage-title{font-family:‘Orbitron’,monospace;font-size:10px;color:#4af;letter-spacing:1px;margin-bottom:8px;}
+.abs-canvas-wrap{position:relative;border:1px solid rgba(100,180,255,0.2);border-radius:10px;overflow:hidden;background:#010208;}
+#absCanvas{display:block;width:100%;touch-action:none;}
+.abs-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.abs-leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#789;}
+.abs-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.abs-rank-list{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
+.abs-rank-item{display:flex;align-items:center;gap:8px;padding:7px 12px;background:rgba(8,16,40,0.9);border:1px solid rgba(100,180,255,0.12);border-radius:8px;font-size:10px;}
+.abs-rank-pos{font-family:‘Orbitron’,monospace;font-size:10px;color:#4af;width:20px;flex-shrink:0;text-align:center;}
+.abs-rank-icon{font-size:18px;flex-shrink:0;}
+.abs-rank-name{flex:1;color:#cde;}
+.abs-rank-val{font-family:‘Share Tech Mono’,monospace;font-size:9px;color:#ffe566;}
+.abs-rank-change{font-size:9px;padding:2px 6px;border-radius:4px;flex-shrink:0;}
+.abs-rank-change.up{background:rgba(60,220,120,0.12);color:#4f8;}
+.abs-rank-change.down{background:rgba(255,80,60,0.12);color:#f84;}
+.abs-rank-change.same{background:rgba(100,100,100,0.1);color:#678;}
+
+/* Luminosity panel */
+#lumPanel{padding:12px;display:none;}
+#lumPanel.show{display:block;}
+.lum-intro{background:rgba(255,160,0,0.05);border:1px solid rgba(255,160,0,0.2);border-radius:10px;padding:12px;font-size:10px;color:#9bc;line-height:1.6;margin-bottom:14px;}
+.lum-intro strong{color:#ffa040;}
+.star-compare{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.lum-star-card{border:1px solid rgba(100,180,255,0.2);border-radius:12px;overflow:hidden;background:rgba(6,12,32,0.9);}
+.lum-star-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(100,180,255,0.1);}
+.lum-star-emoji{font-size:24px;}
+.lum-star-name{font-family:‘Orbitron’,monospace;font-size:11px;color:#fff;font-weight:700;}
+.lum-star-type{font-size:9px;color:#567;margin-top:2px;}
+.lum-sim{padding:10px 14px 14px;}
+.lum-sim-label{font-size:9px;color:#567;letter-spacing:1px;margin-bottom:8px;}
+.lum-slider-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.lum-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(100,180,255,0.2);outline:none;}
+.lum-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;cursor:pointer;}
+.lum-sky{width:100%;height:70px;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;background:#000;overflow:hidden;border:1px solid rgba(100,180,255,0.1);}
+.lum-star-dot{border-radius:50%;position:absolute;transition:all 0.15s;}
+.lum-readout{display:flex;justify-content:space-between;font-size:9px;margin-top:6px;}
+.lum-readout span{color:#ffe566;font-weight:bold;}
+.lum-readout label{color:#456;}
+.lum-insight{background:rgba(255,160,0,0.06);border:1px solid rgba(255,160,0,0.2);border-radius:8px;padding:10px;font-size:10px;color:#9bc;line-height:1.6;margin-top:12px;}
+.lum-insight strong{color:#ffa040;}
+
+/* ═══ COMING SOON ═══ */
+#comingSoonModal{position:fixed;inset:0;z-index:700;background:rgba(0,4,18,0.9);display:none;align-items:center;justify-content:center;padding:30px;}
+#comingSoonModal.open{display:flex;}
+.cs-box{text-align:center;animation:fadeIn 0.3s ease;}
+.cs-box div{font-size:64px;margin-bottom:16px;}
+.cs-box h2{font-family:‘Orbitron’,monospace;font-size:18px;color:#fff;letter-spacing:3px;margin-bottom:8px;}
+.cs-box p{font-size:11px;color:#678;margin-bottom:24px;}
+.cs-close{background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:‘Orbitron’,monospace;font-size:10px;padding:10px 24px;cursor:pointer;letter-spacing:2px;}
+/* ═══ EM SPECTRUM SCREEN ═══ */
+#emScreen{background:var(–bg);overflow:hidden;}
+.em-header{flex-shrink:0;padding:9px 14px 7px;border-bottom:1px solid rgba(100,180,255,0.25);background:rgba(2,5,16,0.96);display:flex;align-items:center;gap:10px;}
+.em-header h1{font-family:‘Orbitron’,monospace;font-size:11px;font-weight:900;color:#fff;letter-spacing:2px;flex:1;}
+.em-tabs{display:flex;border-bottom:1px solid rgba(100,180,255,0.15);flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.em-tabs::-webkit-scrollbar{display:none;}
+.em-tab{flex:0 0 auto;padding:8px 10px;text-align:center;font-family:‘Orbitron’,monospace;font-size:7px;letter-spacing:1px;color:#456;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.em-tab.active{border-bottom-color:currentColor;}
+.em-body{flex:1;overflow-y:auto;overflow-x:hidden;}
+.em-panel{display:none;padding:12px;}
+.em-panel.show{display:block;}
+
+/* EM Spectrum bar */
+.em-bar-wrap{width:100%;border-radius:10px;overflow:hidden;margin-bottom:14px;position:relative;cursor:pointer;}
+.em-bar{height:44px;width:100%;display:flex;}
+.em-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:6px;font-family:‘Orbitron’,monospace;letter-spacing:0.5px;color:rgba(255,255,255,0.7);cursor:pointer;transition:transform 0.2s,filter 0.2s;position:relative;}
+.em-seg:active,.em-seg.sel{transform:scaleY(1.18);filter:brightness(1.4);z-index:2;}
+.em-seg-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:6px;pointer-events:none;}
+.em-wavelength-row{display:flex;justify-content:space-between;padding:0 2px;margin-bottom:10px;}
+.em-wavelength-row span{font-size:7px;color:#567;font-family:‘Share Tech Mono’,monospace;}
+
+/* Wave animation canvas */
+.em-wave-wrap{border:1px solid rgba(100,180,255,0.15);border-radius:10px;overflow:hidden;background:#010310;margin-bottom:12px;}
+#emWaveCanvas{display:block;width:100%;}
+
+/* Band info card */
+.em-band-card{background:rgba(8,16,40,0.9);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+.em-band-header{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;}
+.em-band-icon{font-size:26px;flex-shrink:0;}
+.em-band-name{font-family:‘Orbitron’,monospace;font-size:13px;font-weight:700;color:#fff;}
+.em-band-range{font-size:9px;color:#7ab;margin-top:2px;font-family:‘Share Tech Mono’,monospace;}
+.em-band-body{padding:0 14px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.em-fact{background:rgba(255,255,255,0.04);border-radius:8px;padding:7px 10px;}
+.em-fact-label{font-size:8px;color:#456;letter-spacing:1px;text-transform:uppercase;}
+.em-fact-value{font-size:11px;color:#dff;margin-top:2px;font-weight:bold;}
+.em-band-desc{padding:0 14px 12px;font-size:10px;color:#89a;line-height:1.6;}
+.em-band-astro{margin:0 14px 12px;background:rgba(68,170,255,0.06);border:1px solid rgba(68,170,255,0.18);border-radius:8px;padding:8px 10px;font-size:10px;color:#9bc;line-height:1.5;}
+.em-band-astro strong{color:#4af;}
+.em-band-uses{margin:0 14px 12px;}
+.em-uses-title{font-size:8px;color:#ffe566;letter-spacing:1px;text-transform:uppercase;font-weight:bold;margin-bottom:6px;}
+.em-use-item{display:flex;align-items:flex-start;gap:7px;margin-bottom:5px;font-size:10px;color:#9bc;line-height:1.4;}
+.em-use-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+
+/* Overview panel */
+.em-overview-intro{background:rgba(68,170,255,0.05);border:1px solid rgba(68,170,255,0.18);border-radius:10px;padding:12px;font-size:10px;color:#9bc;line-height:1.6;margin-bottom:12px;}
+.em-overview-intro strong{color:#ffe566;}
+.em-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+.em-compare-card{border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:3px;}
+.em-compare-card .ecc-name{font-family:‘Orbitron’,monospace;font-size:8px;font-weight:700;color:#fff;}
+.em-compare-card .ecc-wave{font-size:8px;color:rgba(255,255,255,0.6);font-family:‘Share Tech Mono’,monospace;}
+.em-compare-card .ecc-energy{font-size:9px;color:rgba(255,255,255,0.85);margin-top:2px;}
+.em-key-fact{background:rgba(255,220,50,0.05);border:1px solid rgba(255,220,50,0.18);border-radius:8px;padding:10px;font-size:10px;color:#9bc;line-height:1.6;margin-bottom:8px;}
+.em-key-fact strong{color:#ffe566;}
+
+/* Quiz panel */
+.em-quiz-q{background:rgba(8,16,40,0.9);border:1px solid rgba(100,180,255,0.15);border-radius:12px;padding:14px;margin-bottom:10px;}
+.em-quiz-q p{font-size:11px;color:#cde;line-height:1.5;margin-bottom:12px;}
+.em-quiz-choices{display:flex;flex-direction:column;gap:7px;}
+.em-choice{padding:10px 14px;border-radius:8px;border:1px solid rgba(100,180,255,0.2);background:rgba(255,255,255,0.03);font-size:10px;color:#9bc;cursor:pointer;transition:all 0.18s;text-align:left;}
+.em-choice:active{transform:scale(0.98);}
+.em-choice.correct{background:rgba(60,220,120,0.1);border-color:#4f8;color:#6fa;}
+.em-choice.wrong{background:rgba(255,80,60,0.1);border-color:#f84;color:#f98;}
+.em-choice.disabled{pointer-events:none;opacity:0.5;}
+.em-quiz-explain{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:10px;line-height:1.5;display:none;}
+.em-quiz-explain.show{display:block;}
+.em-quiz-explain.right-exp{background:rgba(60,220,120,0.06);border:1px solid rgba(60,220,120,0.2);color:#6fa;}
+.em-quiz-explain.wrong-exp{background:rgba(255,80,60,0.06);border:1px solid rgba(255,80,60,0.2);color:#f98;}
+.em-quiz-score{font-family:‘Orbitron’,monospace;font-size:11px;color:#4af;text-align:center;padding:10px;letter-spacing:1px;}
+.em-quiz-reset{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:‘Orbitron’,monospace;font-size:10px;padding:10px;cursor:pointer;letter-spacing:1px;margin-top:6px;}
+</style>
+
+</head>
+<body>
+
+<!-- STARFIELD -->
+
+<div id="starfield"></div>
+
+<!-- COG BUTTON -->
+
+<button id="cogBtn" onclick="openCog()">⚙</button>
+
+<!-- COG MODAL -->
+
+<div id="cogModal">
+  <div class="cog-box">
+    <h3>&#128274; INSTRUCTOR CODE</h3>
+    <p>Enter the code to instantly complete the current activity and unlock the full results view.</p>
+    <input id="cogInput" type="text" placeholder="enter code" autocomplete="off" spellcheck="false">
+    <div id="cogMsg"></div>
+    <button class="cog-submit" onclick="submitCog()">SUBMIT</button>
+    <button class="cog-cancel" onclick="closeCog()">CANCEL</button>
+  </div>
+</div>
+
+<!-- DIRECTIONS MODAL -->
+
+<div id="directionsModal">
+  <div class="dir-box">
+    <div class="dir-header">
+      <div class="dir-icon" id="dirIcon"></div>
+      <div><div class="dir-title" id="dirTitle"></div><div class="dir-subtitle" id="dirSubtitle"></div></div>
+    </div>
+    <div class="dir-body" id="dirBody"></div>
+    <div class="dir-footer">
+      <button class="dir-start" id="dirStartBtn">LET'S GO &#9654;</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMING SOON modal removed - EM spectrum is now live -->
+
+<!-- ════════════════════════════════
+     TITLE SCREEN
+═════════════════════════════════ -->
+
+<div id="titleScreen" class="screen active">
+  <div class="title-hero">
+    <div class="title-logo">ASTRO LAB</div>
+    <div class="title-sub">STELLAR SCIENCE ACTIVITIES</div>
+  </div>
+  <div class="title-form">
+    <div>
+      <label>YOUR NAME</label>
+      <input class="title-input" id="studentName" type="text" placeholder="First Last" autocomplete="off">
+    </div>
+    <div>
+      <label>CLASS PERIOD</label>
+      <div class="period-row" id="periodRow">
+        <div class="period-btn" onclick="selectPeriod(1)">1</div>
+        <div class="period-btn" onclick="selectPeriod(2)">2</div>
+        <div class="period-btn" onclick="selectPeriod(3)">3</div>
+        <div class="period-btn" onclick="selectPeriod(4)">4</div>
+        <div class="period-btn" onclick="selectPeriod(5)">5</div>
+        <div class="period-btn" onclick="selectPeriod(6)">6</div>
+        <div class="period-btn" onclick="selectPeriod(7)">7</div>
+      </div>
+    </div>
+  </div>
+  <div class="activity-btns">
+    <div class="act-btn" onclick="launchHR()">
+      <div class="act-icon">&#11088;</div>
+      <div class="act-info">
+        <h3>HR DIAGRAM</h3>
+        <p>Fly 100 real stars to their correct position on the Hertzsprung-Russell Diagram.</p>
+        <span class="act-badge">STELLAR CLASSIFICATION</span>
+      </div>
+    </div>
+    <div class="act-btn" onclick="launchMag()">
+      <div class="act-icon">&#10024;</div>
+      <div class="act-info">
+        <h3>MAGNITUDE &amp; LUMINOSITY</h3>
+        <p>Rank stars by apparent brightness, then discover how distance fools our eyes.</p>
+        <span class="act-badge">BRIGHTNESS &amp; DISTANCE</span>
+      </div>
+    </div>
+    <div class="act-btn" onclick="launchEM()">
+      <div class="act-icon">&#127752;</div>
+      <div class="act-info">
+        <h3>EM SPECTRUM</h3>
+        <p>Explore the electromagnetic spectrum and how astronomers use different wavelengths.</p>
+        <span class="act-badge">LIGHT &amp; WAVELENGTH</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     HR DIAGRAM SCREEN
+═════════════════════════════════ -->
+
+<div id="hrScreen" class="screen">
+  <header>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button class="back-btn" onclick="goHome()" style="border:1px solid rgba(100,180,255,0.25);border-radius:6px;color:#7ab;font-family:'Share Tech Mono',monospace;font-size:9px;padding:5px 10px;cursor:pointer;background:none;">&#8592; HOME</button>
+      <div>
+        <h1 style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;letter-spacing:3px;color:#fff;">HR DIAGRAM</h1>
+        <p style="font-size:9px;color:#7a9;margin-top:2px;letter-spacing:1px;" id="hrStudentLabel"></p>
+      </div>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+    <div class="progress-label" id="progLabel">0 / 100 STARS PLOTTED</div>
+  </header>
+  <div id="hrMain">
+    <div class="diagram-wrap" id="diagramWrap">
+      <div class="axis-title-v left">LUMINOSITY (L&#9737;)</div>
+      <div class="y-label-left" id="yLabLeft"></div>
+      <div class="y-label-right" id="yLabRight"></div>
+      <div class="axis-title-v right">ABS. MAGNITUDE</div>
+      <div id="snapRing"></div>
+      <canvas id="hrCanvas"></canvas>
+      <div class="x-labels"><span>50K</span><span>25K</span><span>10K</span><span>6K</span><span>4K</span><span>3K</span></div>
+      <div class="x-axis-title">SURFACE TEMPERATURE (K) &#8592; HOT &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; COOL &#8594;</div>
+      <div id="coordPanel">
+        <span id="coordTemp">T: — K</span><span class="coord-sep">|</span>
+        <span id="coordLum">L: —</span><span class="coord-sep">|</span>
+        <span id="coordMag">M: —</span>
+      </div>
+    </div>
+    <div class="queue-section">
+      <div class="queue-title"><span class="next-arrow">&#9658;</span> TAP A STAR TO LEARN ABOUT IT</div>
+      <div class="queue-scroll" id="queueScroll"></div>
+    </div>
+    <div id="joystickPanel">
+      <div><div id="joystickBase"><div id="joystickKnob"></div></div><div id="joyLabel">STEER</div></div>
+      <div id="flightRight">
+        <div id="flightInfo">STEER + THRUST TO FLY!</div>
+        <div id="lockBtn" onclick="lockStar()">&#9654; LOCK IN!</div>
+      </div>
+      <div><div id="thrustBtn">&#9652;<br>THRUST</div><div id="thrustLabel">FIRE</div></div>
+    </div>
+  </div>
+  <!-- HR Card -->
+  <div class="card-overlay" id="cardOverlay">
+    <div class="star-card">
+      <div class="card-header">
+        <div class="card-visual" id="cardVisual"></div>
+        <div class="card-titles"><h2 id="cardName"></h2><div class="card-class" id="cardClass"></div></div>
+        <button class="card-close" id="cardCloseBtn">&#x2715;</button>
+      </div>
+      <div class="card-body" id="cardStats"></div>
+      <div class="card-desc" id="cardDesc"></div>
+      <div class="card-classify" id="cardClassify"></div>
+      <div class="review-panel" id="reviewPanel"></div>
+      <div class="card-footer">
+        <button class="plot-btn" id="plotBtn">&#9733; LAUNCH STAR &mdash; FLY TO POSITION</button>
+        <button class="review-btn" id="reviewBtn" onclick="toggleReview()">&#128269; SHOW STATS TO HELP PLACE THIS STAR</button>
+      </div>
+    </div>
+  </div>
+  <!-- Complete Banner -->
+  <div class="complete-banner" id="completeBanner">
+    <div style="font-size:48px">&#11088;</div>
+    <h2>DIAGRAM COMPLETE!</h2>
+    <p id="completeMsg">All 100 stars classified!</p>
+    <button class="restart-btn" onclick="enterBrowseMode()" style="font-size:11px;">&#128269; TAP STARS ON THE DIAGRAM</button>
+    <button class="restart-btn" style="border-color:#f84;color:#f84;margin-top:6px;font-size:9px;" onclick="restart()">RESET &amp; START OVER</button>
+  </div>
+  <!-- Browse mode hint bar -->
+  <div id="browseBar" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:60;background:rgba(2,5,16,0.92);border-top:1px solid rgba(100,180,255,0.2);padding:7px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;">
+    <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4af;letter-spacing:1px;">&#9733; TAP ANY STAR TO READ ABOUT IT</span>
+    <button onclick="exitBrowseMode()" style="background:none;border:1px solid rgba(100,180,255,0.25);border-radius:5px;color:#7ab;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 9px;cursor:pointer;flex-shrink:0;">DONE</button>
+  </div>
+  <!-- Explore overlay -->
+  <div id="exploreOverlay">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid rgba(100,180,255,0.25);background:rgba(2,5,16,0.98);flex-shrink:0;">
+      <div style="font-family:Orbitron,monospace;font-size:11px;font-weight:900;color:#fff;letter-spacing:2px;">EXPLORE</div>
+      <div style="font-size:9px;color:#567;font-family:Share Tech Mono,monospace;">PINCH ZOOM &bull; DRAG PAN &bull; TAP STAR</div>
+      <button onclick="exitExploreMode()" style="background:none;border:1px solid rgba(100,180,255,0.3);border-radius:6px;color:#7ab;font-family:Orbitron,monospace;font-size:9px;padding:5px 10px;cursor:pointer;">BACK</button>
+    </div>
+    <div style="flex:1;overflow:hidden;position:relative;" id="exploreContainer">
+      <canvas id="exploreCanvas" style="position:absolute;top:0;left:0;touch-action:none;cursor:crosshair;"></canvas>
+    </div>
+    <div style="padding:6px 16px;background:rgba(2,5,16,0.98);border-top:1px solid rgba(100,180,255,0.15);font-family:Share Tech Mono,monospace;font-size:9px;color:#456;text-align:center;flex-shrink:0;" id="exploreHint">TAP ANY STAR POINT TO SEE ITS INFO</div>
+  </div>
+  <!-- Drag banner -->
+  <div id="dragBanner"><span class="afl-s">&#9654;</span> FLY THE STAR TO ITS CORRECT POSITION <span class="afl-s">&#9654;</span></div>
+</div>
+
+<!-- ════════════════════════════════
+     MAGNITUDE / LUMINOSITY SCREEN
+═════════════════════════════════ -->
+
+<div id="magScreen" class="screen">
+  <div class="mag-header">
+    <button class="back-btn" onclick="goHome()">&#8592; HOME</button>
+    <h1>MAGNITUDE &amp; LUMINOSITY</h1>
+  </div>
+  <div class="mag-tabs">
+    <div class="mag-tab active" id="tab-apparent" onclick="showMagTab('apparent')">APPARENT</div>
+    <div class="mag-tab" id="tab-absolute" onclick="showMagTab('absolute')">ABSOLUTE</div>
+    <div class="mag-tab" id="tab-lum" onclick="showMagTab('lum')">LUMINOSITY</div>
+  </div>
+  <div class="mag-body">
+    <!-- APPARENT TAB -->
+    <div id="apparentPanel">
+      <div class="mag-intro">
+        <strong>Apparent Magnitude</strong> is how bright a star looks from Earth — not how bright it actually is. A nearby dim star can appear brighter than a distant powerful one.<br><br>
+        Drag the objects below to rank them from <strong>brightest (1) to dimmest (10)</strong> as seen from Earth.
+      </div>
+      <div class="rank-instruction">&#8597; DRAG TO REORDER &mdash; BRIGHTEST AT TOP</div>
+      <div class="rank-list" id="rankList"></div>
+      <button class="check-btn" onclick="checkApparentRank()">CHECK MY RANKING &#10003;</button>
+      <div class="check-result" id="checkResult"></div>
+    </div>
+
+```
+<!-- ABSOLUTE TAB -->
+<div id="absolutePanel">
+  <div class="abs-intro">
+    <strong>Absolute Magnitude</strong> is how bright a star would look if every object was placed exactly <strong>10 parsecs (32.6 light-years)</strong> from Earth.<br><br>
+    This removes the distance trick — now we can compare true brightness. Notice how the ranking changes!
+  </div>
+  <div class="abs-stage">
+    <div class="abs-stage-title">AT THEIR ACTUAL DISTANCES</div>
+    <div class="abs-canvas-wrap"><canvas id="absCanvasApparent" style="display:block;width:100%;"></canvas></div>
+  </div>
+  <div class="abs-stage">
+    <div class="abs-stage-title">ALL AT 10 PARSECS &mdash; TRUE BRIGHTNESS REVEALED</div>
+    <div class="abs-canvas-wrap"><canvas id="absCanvasAbsolute" style="display:block;width:100%;"></canvas></div>
+  </div>
+  <div class="abs-legend" id="absLegend"></div>
+  <div style="font-family:'Orbitron',monospace;font-size:9px;color:#4af;letter-spacing:1px;margin:14px 0 6px;">RANKING CHANGES</div>
+  <div class="abs-rank-list" id="absRankList"></div>
+</div>
+
+<!-- LUMINOSITY TAB -->
+<div id="lumPanel">
+  <div class="lum-intro">
+    <strong>Luminosity</strong> is a star's total energy output — its true power. It depends on <strong>size</strong> and <strong>temperature</strong>. Drag the distance slider on each star to see how apparent brightness changes, but luminosity stays constant.<br><br>
+    The hottest, largest stars are the most luminous. The smallest, coolest stars are the least luminous.
+  </div>
+  <div class="star-compare" id="starCompare"></div>
+  <div class="lum-insight">
+    <strong>Key Insight:</strong> Moving a star closer makes it appear brighter, but its <em>luminosity doesn't change</em>. The Sun looks brightest from Earth only because it is so close — many stars are thousands of times more luminous but appear faint because of distance. Luminosity follows the <strong>inverse square law</strong>: double the distance = one quarter the apparent brightness.
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     EM SPECTRUM SCREEN
+═════════════════════════════════ -->
+
+<div id="emScreen" class="screen">
+  <div class="em-header">
+    <button class="back-btn" onclick="goHome()">&#8592; HOME</button>
+    <h1>EM SPECTRUM</h1>
+  </div>
+  <div class="em-tabs" id="emTabs">
+    <div class="em-tab active" id="emtab-overview" onclick="showEMTab('overview')" style="color:#4af;">OVERVIEW</div>
+    <div class="em-tab" id="emtab-band" onclick="showEMTab('band')" style="color:#89a;">EXPLORE</div>
+    <div class="em-tab" id="emtab-astro" onclick="showEMTab('astro')" style="color:#89a;">ASTRONOMY</div>
+    <div class="em-tab" id="emtab-quiz" onclick="showEMTab('quiz')" style="color:#89a;">QUIZ</div>
+  </div>
+  <div class="em-body">
+
+```
+<!-- OVERVIEW TAB -->
+<div id="emPanel-overview" class="em-panel show">
+  <div class="em-overview-intro">
+    <strong>Electromagnetic radiation</strong> is energy that travels through space as waves. All EM waves move at the <strong>speed of light</strong> (300,000 km/s) but differ in <strong>wavelength</strong> and <strong>frequency</strong>.<br><br>
+    Shorter wavelength = higher frequency = <strong>more energy</strong>. This is why gamma rays are deadly and radio waves are harmless.
+  </div>
+  <!-- Full spectrum bar -->
+  <div style="font-family:'Orbitron',monospace;font-size:8px;color:#ffe566;letter-spacing:1px;margin-bottom:6px;">TAP A BAND TO EXPLORE IT</div>
+  <div class="em-bar-wrap" id="overviewBar"></div>
+  <div class="em-wavelength-row">
+    <span>10&#8315;&#185;&#178; m (gamma)</span>
+    <span>&#8594; wavelength increases &#8594;</span>
+    <span>10&#8313; m (radio)</span>
+  </div>
+  <div class="em-compare-grid" id="emCompareGrid"></div>
+  <div class="em-key-fact"><strong>Key Rule:</strong> E = hf — energy equals Planck's constant times frequency. Double the frequency, double the energy. Astronomers study <em>all</em> bands of the EM spectrum to build a complete picture of the universe.</div>
+  <div class="em-key-fact"><strong>Atmospheric Windows:</strong> Earth's atmosphere only lets through visible light and most radio waves. Infrared, UV, X-ray, and gamma telescopes must go to space — that's why we built Hubble, Chandra, and the James Webb Space Telescope.</div>
+</div>
+
+<!-- BAND EXPLORER TAB -->
+<div id="emPanel-band" class="em-panel">
+  <div class="em-bar-wrap" id="bandBar"></div>
+  <canvas id="emWaveCanvas" class="em-wave-wrap" height="60"></canvas>
+  <div class="em-band-card" id="emBandCard"></div>
+</div>
+
+<!-- ASTRONOMY TAB -->
+<div id="emPanel-astro" class="em-panel">
+  <div class="em-overview-intro">
+    <strong>Multi-wavelength astronomy</strong> means studying the same object in different parts of the spectrum. Each band reveals something invisible to the others — together they tell the complete story.
+  </div>
+  <div id="emAstroCards"></div>
+</div>
+
+<!-- QUIZ TAB -->
+<div id="emPanel-quiz" class="em-panel">
+  <div class="em-quiz-score" id="emQuizScore">SCORE: 0 / 0</div>
+  <div id="emQuizContainer"></div>
+  <button class="em-quiz-reset" onclick="resetEMQuiz()">&#8635; RESET QUIZ</button>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════════════════
+let studentName='', studentPeriod=0, currentScreen='title';
+
+function selectPeriod(n){
+  studentPeriod=n;
+  document.querySelectorAll('.period-btn').forEach((b,i)=>b.classList.toggle('sel',i+1===n));
+}
+
+function goHome(){
+  stopFlight();
+  showScreen('titleScreen');
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen=id;
+}
+
+// ══════════════════════════════════════════════════
+// COG / CHEAT CODE
+// ══════════════════════════════════════════════════
+function openCog(){
+  document.getElementById('cogInput').value='';
+  document.getElementById('cogMsg').textContent='';
+  document.getElementById('cogModal').classList.add('open');
+  setTimeout(()=>document.getElementById('cogInput').focus(),100);
+}
+function closeCog(){document.getElementById('cogModal').classList.remove('open');}
+function submitCog(){
+  const val=document.getElementById('cogInput').value.trim().toLowerCase();
+  if(val==='science'){
+    closeCog();
+    if(currentScreen==='hrScreen') cheatCompleteHR();
+    else if(currentScreen==='magScreen') cheatCompleteMag();
+    else if(currentScreen==='emScreen') cheatCompleteEM();
+  } else {
+    document.getElementById('cogMsg').textContent='Incorrect code. Try again.';
+  }
+}
+document.getElementById('cogInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitCog();});
+
+function cheatCompleteHR(){
+  STARS.forEach(s=>{ plotted[s.name]=true; });
+  drawDiagram(); updateProgress();
+  document.querySelectorAll('.star-chip').forEach(c=>c.classList.add('plotted-chip'));
+  setTimeout(()=>{
+    document.getElementById('completeBanner').classList.add('show');
+    document.getElementById('completeMsg').textContent='Activity completed! Explore your finished diagram.';
+  },400);
+}
+function cheatCompleteMag(){
+  // Unlock all tabs, show answer key
+  document.getElementById('tab-absolute').style.color='';
+  showMagTab('absolute');
+  buildAbsoluteView();
+}
+
+// ══════════════════════════════════════════════════
+// DIRECTIONS POPUP
+// ══════════════════════════════════════════════════
+function showDirections(config, cb){
+  document.getElementById('dirIcon').textContent=config.icon;
+  document.getElementById('dirTitle').textContent=config.title;
+  document.getElementById('dirSubtitle').textContent=config.subtitle;
+  const body=document.getElementById('dirBody');
+  body.innerHTML=config.steps.map((s,i)=>`<div class="dir-step"><div class="dir-num">${i+1}</div><div class="dir-text">${s}</div></div>`).join('');
+  document.getElementById('dirStartBtn').onclick=()=>{
+    document.getElementById('directionsModal').classList.remove('open');
+    if(cb)cb();
+  };
+  document.getElementById('directionsModal').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// LAUNCH HR
+// ══════════════════════════════════════════════════
+function launchHR(){
+  const name=document.getElementById('studentName').value.trim();
+  if(!name){alert('Please enter your name first!');return;}
+  if(!studentPeriod){alert('Please select your class period!');return;}
+  studentName=name; 
+  showScreen('hrScreen');
+  document.getElementById('hrStudentLabel').textContent=studentName+' · Period '+studentPeriod;
+  setTimeout(()=>{
+    if(!hrInitialized){initHR();}
+    showDirections({
+      icon:'&#11088;',
+      title:'HR DIAGRAM',
+      subtitle:'STELLAR CLASSIFICATION LAB',
+      steps:[
+        'Tap any <strong>star chip</strong> in the scrolling list below the diagram to read about that star.',
+        'Study its <strong>temperature</strong> (x-axis) and <strong>luminosity</strong> (y-axis) — these tell you exactly where it belongs on the diagram.',
+        'Tap <strong>LAUNCH STAR</strong> to enter flight mode. Use the <strong>joystick</strong> to steer and hold <strong>THRUST</strong> to fly.',
+        'When the <strong>green ring</strong> appears, you are in the correct zone! Tap <strong>LOCK IN</strong> to plot the star.',
+        'Plot all <strong>100 stars</strong> to complete the diagram. When done, explore it with pinch-zoom and tap any star to review.'
+      ]
+    }, null);
+  },100);
+}
+
+// ══════════════════════════════════════════════════
+// LAUNCH MAGNITUDE
+// ══════════════════════════════════════════════════
+function launchMag(){
+  const name=document.getElementById('studentName').value.trim();
+  if(!name){alert('Please enter your name first!');return;}
+  if(!studentPeriod){alert('Please select your class period!');return;}
+  studentName=name;
+  showScreen('magScreen');
+  showMagTab('apparent');
+  if(!magInitialized) initMag();
+  showDirections({
+    icon:'&#10024;',
+    title:'MAGNITUDE & LUMINOSITY',
+    subtitle:'BRIGHTNESS, DISTANCE & POWER',
+    steps:[
+      'In the <strong>Apparent</strong> tab, drag the 10 objects to rank them from brightest to dimmest <strong>as seen from Earth</strong>.',
+      'Once you check your answer, move to the <strong>Absolute</strong> tab to see what happens when all objects are placed at the <strong>same distance</strong>.',
+      'Notice how the ranking <strong>completely changes</strong> — this reveals each object\'s true brightness!',
+      'In the <strong>Luminosity</strong> tab, drag the distance slider on each star to explore how distance affects apparent brightness, while luminosity stays constant.',
+      'Compare the three star types side by side to see why <strong>hot, large stars</strong> are the most luminous.'
+    ]
+  }, null);
+}
+
+// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// HR DIAGRAM ENGINE (full, unchanged logic)
+// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+const STARS=[
+{name:"Theta1 Orionis C",temp:45000,lum:200000,type:"O6V",color:"#aaddff",category:"Main Sequence",desc:"The brightest star in the Trapezium cluster — it ionizes the entire Orion Nebula.",classify:"O-type stars are the hottest main-sequence stars, burning blue-white. They live only a few million years before exploding as supernovae."},
+{name:"Zeta Puppis",temp:42000,lum:800000,type:"O4If",color:"#bbddff",category:"Supergiant",desc:"One of the hottest naked-eye stars, shedding mass in powerful stellar winds.",classify:"Luminous blue supergiants are rare, short-lived, and among the most massive stars known."},
+{name:"Lambda Orionis",temp:35000,lum:100000,type:"O8III",color:"#cce8ff",category:"Giant",desc:"The head of Orion, this hot giant illuminates a large bubble nebula around it.",classify:"O-type giants have begun evolving off the main sequence after core hydrogen depletion."},
+{name:"10 Lacertae",temp:36000,lum:90000,type:"O9V",color:"#bbd8ff",category:"Main Sequence",desc:"A standard O-star calibration target used to precisely define the spectral class.",classify:"O9 dwarfs sit near the cool end of O-type stars but still exceed 30,000 K at their surface."},
+{name:"HD 93129A",temp:52000,lum:2500000,type:"O2If",color:"#aaccff",category:"Supergiant",desc:"One of the most luminous stars known, located in the Carina Nebula.",classify:"O2 stars push the upper mass limit of stellar physics. Their radiation pressure nearly equals their own gravity."},
+{name:"Spica",temp:25400,lum:20000,type:"B1V",color:"#d0e8ff",category:"Main Sequence",desc:"Alpha Virginis — a spectroscopic binary of two blue-white stars orbiting every 4 days.",classify:"B1 main-sequence stars are very hot and luminous. They fuse hydrogen at a furious rate and shine brilliant blue-white."},
+{name:"Achernar",temp:15000,lum:3150,type:"B3Vep",color:"#d8ecff",category:"Main Sequence",desc:"The most oblate star known — it spins so fast its equatorial radius is 56% larger than its poles.",classify:"Rapidly rotating B stars can bulge dramatically at their equators, sometimes shedding material into disks."},
+{name:"Regulus",temp:12460,lum:363,type:"B7V",color:"#ddefff",category:"Main Sequence",desc:"Alpha Leonis — the heart of the lion, another fast rotator nearly at breakup spin velocity.",classify:"B7 dwarfs are less extreme than hotter B stars but still far brighter than the Sun."},
+{name:"Epsilon Orionis",temp:27500,lum:375000,type:"B0Ia",color:"#cce0ff",category:"Supergiant",desc:"Alnilam — the central star of Orion's Belt, a blue supergiant 2,000 light-years away.",classify:"B0 supergiants are enormously luminous evolved stars that will explode as core-collapse supernovae."},
+{name:"Zeta Orionis",temp:29500,lum:250000,type:"O9.5Ib",color:"#c8deff",category:"Supergiant",desc:"Alnitak — the easternmost Belt star, illuminating the Flame and Horsehead Nebulae.",classify:"Late O supergiants bridge O and B classifications. Their UV output carves cavities in surrounding gas."},
+{name:"Delta Orionis",temp:29500,lum:190000,type:"O9.5II",color:"#cce0ff",category:"Giant",desc:"Mintaka — the westernmost Belt star, used historically to study interstellar absorption.",classify:"Bright giants occupy a luminosity class between normal giants and true supergiants."},
+{name:"Eta Canis Majoris",temp:15000,lum:38000,type:"B5Ia",color:"#d8ecff",category:"Supergiant",desc:"Aludra — the tip of the dog's tail, an aging blue supergiant with powerful stellar winds.",classify:"B5 supergiants are cooling and evolving, crossing toward the yellow-supergiant region."},
+{name:"Beta Crucis",temp:28000,lum:34000,type:"B0.5III",color:"#cce0ff",category:"Giant",desc:"Mimosa — the second-brightest star of the Southern Cross, a beta Cephei pulsating variable.",classify:"B0 giants have begun post-main-sequence expansion. Their interior pulsations reveal stellar structure."},
+{name:"Rigel",temp:12100,lum:120000,type:"B8Ia",color:"#ddf0ff",category:"Supergiant",desc:"Beta Orionis — the brightest supergiant visible to the naked eye, 860 light-years distant.",classify:"B8 supergiants are highly luminous evolved stars. Rigel is one of the most powerful stars in our region of the galaxy."},
+{name:"Naos",temp:42000,lum:1100000,type:"O4If",color:"#aaddff",category:"Supergiant",desc:"One of the hottest stars visible to the naked eye, in Puppis. A powerful UV emitter.",classify:"O4 supergiants radiate enormous ultraviolet flux. Their stellar winds lose mass millions of times faster than the Sun."},
+{name:"Sirius A",temp:9940,lum:25.4,type:"A1V",color:"#f0f4ff",category:"Main Sequence",desc:"The brightest star in Earth's night sky, just 8.6 light-years from us.",classify:"A1 dwarfs like Sirius are 1.7 times the Sun's mass. Their spectra show strong hydrogen Balmer absorption lines."},
+{name:"Vega",temp:9602,lum:40.1,type:"A0Va",color:"#f2f5ff",category:"Main Sequence",desc:"The 5th brightest star — once and future North Pole star due to Earth's 26,000-year precession.",classify:"Vega is the prototype A0 star, historically defining the zero-point of the entire stellar magnitude scale."},
+{name:"Deneb",temp:8525,lum:196000,type:"A2Ia",color:"#f5f8ff",category:"Supergiant",desc:"The most intrinsically luminous star in Cygnus, roughly 2,600 light-years distant.",classify:"A2 supergiants are rare, extreme evolved stars. Deneb is one of the most intrinsically luminous stars known."},
+{name:"Fomalhaut",temp:8590,lum:16.6,type:"A3Va",color:"#f5f5ff",category:"Main Sequence",desc:"Surrounded by a dusty debris disk, Fomalhaut hosts a directly imaged candidate exoplanet.",classify:"A3 dwarfs show dominant Balmer hydrogen lines but metallic features are beginning to appear."},
+{name:"Altair",temp:7670,lum:10.6,type:"A7V",color:"#fdfaff",category:"Main Sequence",desc:"The 12th brightest star, only 17 light-years away, rotating once every 9 hours.",classify:"A7 dwarfs sit near the A-F boundary. Altair rotates so fast it bulges visibly at its equator."},
+{name:"Canopus",temp:7400,lum:13600,type:"F0Ib",color:"#fffaf0",category:"Supergiant",desc:"The second-brightest star in the sky, used as a navigation reference by spacecraft.",classify:"F0 supergiants are highly evolved stars heading from the hot blue side toward the red giant region."},
+{name:"Procyon A",temp:6530,lum:6.9,type:"F5IV",color:"#fff8dd",category:"Subgiant",desc:"The eighth-brightest star, 11.4 light-years away — just beginning to evolve off the main sequence.",classify:"F5 subgiants are Sun-like stars expanding after hydrogen core exhaustion. Procyon will become a giant."},
+{name:"Sun",temp:5778,lum:1.0,type:"G2V",color:"#ffe87a",category:"Main Sequence",desc:"Our own star — the absolute benchmark for all stellar comparisons on the HR diagram.",classify:"G2 dwarfs fuse hydrogen over a 10-billion-year main-sequence life. The Sun is currently middle-aged at 4.6 billion years."},
+{name:"Alpha Centauri A",temp:5790,lum:1.519,type:"G2V",color:"#ffe87a",category:"Main Sequence",desc:"The Sun's nearest stellar neighbor in a triple system, a near-solar twin at 4.37 light-years.",classify:"Nearly identical to the Sun in type, Alpha Cen A is slightly more massive and luminous."},
+{name:"Alpha Centauri B",temp:5260,lum:0.500,type:"K1V",color:"#ffd060",category:"Main Sequence",desc:"The slightly cooler companion to Alpha Centauri A, in a tight 80-year mutual orbit.",classify:"K1 dwarfs are orange-hued, cooler than the Sun, and will burn stably for tens of billions of years."},
+{name:"Tau Ceti",temp:5344,lum:0.52,type:"G8.5V",color:"#ffd878",category:"Main Sequence",desc:"An intriguing solar analog 12 light-years away with at least four candidate exoplanets.",classify:"G8 dwarfs are slightly cooler than the Sun, transitioning toward K-type spectra. Long-lived and stable."},
+{name:"Epsilon Eridani",temp:5084,lum:0.34,type:"K2V",color:"#ffc850",category:"Main Sequence",desc:"A young, active K-dwarf 10.5 light-years away — one of the top SETI target stars.",classify:"K2 dwarfs are cool orange stars. Their habitable zones may be especially stable over very long timescales."},
+{name:"61 Cygni A",temp:4374,lum:0.153,type:"K5V",color:"#ffb040",category:"Main Sequence",desc:"The first star to have its distance measured (Bessel, 1838), 11.4 light-years from the Sun.",classify:"K5 dwarfs are orange-red, much dimmer than the Sun. They will shine steadily for tens of billions of years."},
+{name:"Epsilon Indi A",temp:4680,lum:0.22,type:"K5V",color:"#ffb040",category:"Main Sequence",desc:"An orange dwarf 11.8 light-years away, orbited by a distant brown dwarf binary pair.",classify:"K5 dwarfs are stable orange stars. Their extreme longevity makes them prime candidates for hosting evolved life."},
+{name:"Arcturus",temp:4286,lum:215,type:"K1.5III",color:"#ffb040",category:"Giant",desc:"The brightest star in the northern sky — a red giant and an analog for the Sun's distant future.",classify:"K-type giants are evolved stars that have expanded greatly after exhausting their hydrogen core fuel."},
+{name:"Aldebaran",temp:3900,lum:520,type:"K5III",color:"#ffa030",category:"Giant",desc:"The eye of the bull in Taurus — an aging giant that will eventually shed a glowing planetary nebula.",classify:"K5 giants are large, cool, red-orange evolved stars with complex extended outer envelopes."},
+{name:"Capella A",temp:4970,lum:78.7,type:"G8III",color:"#ffd060",category:"Giant",desc:"The brighter component of Capella — a G giant crossing the Hertzsprung gap in stellar evolution.",classify:"G8 giants are crossing the Hertzsprung gap, a short-lived transitional phase from main sequence to full giant."},
+{name:"Pollux",temp:4666,lum:32,type:"K0III",color:"#ffc060",category:"Giant",desc:"The brightest giant in Gemini, hosting a confirmed giant exoplanet called Pollux b.",classify:"K0 giants are moderately cool, orange-hued evolved stars past their hydrogen-core burning phase."},
+{name:"Mira",temp:3150,lum:9000,type:"M7IIIe",color:"#ff4422",category:"Giant",desc:"The prototype long-period variable — it pulsates over 332 days, varying 8 magnitudes in brightness.",classify:"Mira variables are pulsating AGB stars actively shedding their outer layers in the late red-giant phase."},
+{name:"Betelgeuse",temp:3500,lum:100000,type:"M1-2Ia",color:"#ff5533",category:"Supergiant",desc:"Alpha Orionis — a red supergiant whose mysterious dimming in 2019 sparked global supernova speculation.",classify:"M-type supergiants are the largest stars by radius, some exceeding 1,000 solar radii. Betelgeuse will explode."},
+{name:"Antares",temp:3660,lum:57000,type:"M1.5Iab",color:"#ff5530",category:"Supergiant",desc:"The heart of Scorpius, rivaling Mars in color — has a blue companion in a roughly 900-year orbit.",classify:"Red supergiants are end-stage massive stars. Antares will explode as a Type II core-collapse supernova."},
+{name:"VY Canis Majoris",temp:3490,lum:270000,type:"M3-4II",color:"#ff4420",category:"Supergiant",desc:"One of the largest and most luminous red stars known; actively ejecting huge mass shells.",classify:"Extreme red supergiants like VY CMa approach the theoretical upper limits of stellar size and mass."},
+{name:"Mu Cephei",temp:3690,lum:269000,type:"M2Ia",color:"#ff5530",category:"Supergiant",desc:"The Garnet Star — visibly reddish to the naked eye; one of the largest stars in the Milky Way.",classify:"M2 supergiants like Mu Cep are among the most visually striking objects in the entire galaxy."},
+{name:"Polaris",temp:6015,lum:2500,type:"F7Ib",color:"#fffad0",category:"Supergiant",desc:"The North Star — a Cepheid variable pulsating every 3.97 days, 430 light-years away.",classify:"F-type Cepheid supergiants cross the instability strip, pulsating with periods directly tied to their luminosity."},
+{name:"Delta Cephei",temp:5500,lum:2000,type:"F5Ib",color:"#fff5c0",category:"Supergiant",desc:"The prototype Cepheid variable whose period-luminosity law revolutionized cosmic distance measurement.",classify:"Cepheids are the most important standard candles in astronomy, calibrating the extragalactic distance ladder."},
+{name:"P Cygni",temp:18700,lum:620000,type:"B2Ia+",color:"#d8ecff",category:"Supergiant",desc:"A luminous blue variable that underwent a massive outburst visible to the naked eye in 1600 AD.",classify:"LBVs (Luminous Blue Variables) are unstable massive stars erupting near the Eddington luminosity limit."},
+{name:"Sirius B",temp:25000,lum:0.0026,type:"DA2",color:"#eef8ff",category:"White Dwarf",desc:"The first white dwarf ever discovered — compressed remnant of a once-bright star, 8.6 light-years away.",classify:"DA white dwarfs have pure hydrogen atmospheres. They are Earth-sized remnants slowly cooling over billions of years."},
+{name:"Procyon B",temp:7740,lum:0.00055,type:"DQZ",color:"#fff0f0",category:"White Dwarf",desc:"A faint white dwarf companion to Procyon A, just 11.4 light-years from the Sun.",classify:"DQZ white dwarfs show carbon and metals in spectra, likely accreted from disrupted comets or asteroids."},
+{name:"40 Eridani B",temp:16500,lum:0.013,type:"DA4",color:"#eef0ff",category:"White Dwarf",desc:"The first white dwarf discovered in a known visual triple star system, 16 light-years away.",classify:"White dwarfs cool over billions of years. 40 Eri B sits at an intermediate point on the cooling sequence."},
+{name:"van Maanen's Star",temp:6220,lum:0.000170,type:"DZ7",color:"#fff0ee",category:"White Dwarf",desc:"The nearest solitary white dwarf at 14 light-years; its atmosphere is polluted with rocky debris.",classify:"Polluted white dwarfs are thought to be accreting disrupted rocky planetary remnants via tidal forces."},
+{name:"Proxima Centauri",temp:3042,lum:0.00155,type:"M5.5Ve",color:"#ff4422",category:"Main Sequence",desc:"The nearest star to the Sun at 4.24 light-years — a red dwarf flare star with a known exoplanet.",classify:"M5 dwarfs are among the faintest true stars. They will fuse hydrogen for trillions of years, far outlasting the Sun."},
+{name:"Barnard's Star",temp:3134,lum:0.00350,type:"M4V",color:"#ff5533",category:"Main Sequence",desc:"The second-nearest star system, holding the record for fastest proper motion across the sky.",classify:"M4 dwarfs are dim red dwarfs. Barnard's Star moves across the sky faster than any other star as seen from Earth."},
+{name:"Wolf 359",temp:2800,lum:0.00100,type:"M6V",color:"#ff3311",category:"Main Sequence",desc:"One of the faintest and lowest-mass true main-sequence stars known, 7.9 light-years away.",classify:"M6 dwarfs are near the edge of star-brown dwarf territory. They barely sustain hydrogen fusion."},
+{name:"Lalande 21185",temp:3828,lum:0.0209,type:"M2V",color:"#ff6644",category:"Main Sequence",desc:"The fourth-nearest star system, a quiet red dwarf 8.3 light-years distant.",classify:"M2 dwarfs are among the most common stars in the Milky Way. Their stability makes them fascinating study targets."},
+{name:"Ross 154",temp:3240,lum:0.00380,type:"M3.5V",color:"#ff5533",category:"Main Sequence",desc:"A flare star 9.7 light-years away with powerful eruptions relative to its tiny size.",classify:"Flare stars can temporarily multiply their luminosity many times over, bathing nearby planets in intense radiation."},
+{name:"Gliese 876",temp:3176,lum:0.00316,type:"M5V",color:"#ff3322",category:"Main Sequence",desc:"One of the first M-type stars found to host planets, including a rocky super-Earth.",classify:"Planet-hosting M dwarfs confirm that planetary formation occurs efficiently across all stellar masses."},
+{name:"TRAPPIST-1",temp:2566,lum:0.000524,type:"M8V",color:"#ff0808",category:"Main Sequence",desc:"Famous for seven Earth-sized planets — three in the habitable zone — 40 light-years away.",classify:"M8 ultra-cool dwarfs host compact planetary systems that are prime targets for biosignature searches."},
+{name:"Teegarden's Star",temp:2904,lum:0.000734,type:"M7V",color:"#ff1100",category:"Main Sequence",desc:"Only discovered in 2003, this nearby M7 dwarf hosts two Earth-mass planets in its habitable zone.",classify:"M7 dwarfs are the faintest class of genuine hydrogen-fusing stars. Their habitable zones are very close in."},
+{name:"Epsilon Tauri",temp:4901,lum:97,type:"K0III",color:"#ffc060",category:"Giant",desc:"The reddest and brightest member of the Hyades cluster, hosting a confirmed exoplanet.",classify:"Cluster giants allow precise age-dating because they evolved from a known-age stellar population."},
+{name:"Dubhe",temp:4660,lum:316,type:"K0II",color:"#ffc060",category:"Giant",desc:"The pointer star of the Big Dipper — a bright giant with a hot A-type companion.",classify:"K0 bright giants are intermediate between normal giants and true supergiants in both size and luminosity."},
+{name:"KW Sagittarii",temp:3720,lum:360000,type:"M1.5Ia",color:"#ff5530",category:"Supergiant",desc:"A luminous red supergiant in the galactic bulge direction with extreme mass loss rates.",classify:"High mass-loss supergiants shed outer layers rapidly. They may become Wolf-Rayet stars before exploding."},
+{name:"Alpha Lupi",temp:22000,lum:33000,type:"B1.5III",color:"#d0e4ff",category:"Giant",desc:"The brightest star in Lupus — a blue giant that is a beta Cephei pulsating variable.",classify:"B-type beta Cephei variables pulsate with periods of hours due to iron opacity variations deep inside."},
+{name:"Tau Scorpii",temp:31400,lum:17000,type:"B0V",color:"#c8dcff",category:"Main Sequence",desc:"An unusually magnetic early B main-sequence star in Scorpius with a structured, atypical stellar wind.",classify:"Magnetic hot stars develop structured winds and starspots far more extreme than anything seen on the Sun."},
+{name:"Gamma Velorum",temp:57000,lum:170000,type:"WC8",color:"#99ccff",category:"Supergiant",desc:"The nearest Wolf-Rayet star, shedding carbon-rich layers in a catastrophic stellar wind.",classify:"Wolf-Rayet stars are hot evolved massive stars exposing inner fusion layers through extreme mass loss."},
+{name:"Kappa Ori",temp:26200,lum:99000,type:"B0.5Ia",color:"#cce0ff",category:"Supergiant",desc:"Saiph — the right knee of Orion; intrinsically as luminous as Rigel but much more distant.",classify:"B0.5 supergiants are among the most massive stars to reach this evolutionary phase without exploding first."},
+{name:"Xi Puppis",temp:4440,lum:3000,type:"G6Ia",color:"#ffd060",category:"Supergiant",desc:"A bright yellow supergiant in Puppis — one of the most luminous G-type stars known.",classify:"G supergiants are rare evolved giants crossing the instability strip toward cooler temperatures."},
+{name:"61 Cygni B",temp:4044,lum:0.085,type:"K7V",color:"#ffa030",category:"Main Sequence",desc:"The companion to 61 Cygni A — both among the most studied nearby K dwarfs.",classify:"K7 dwarfs are near the K-M boundary — very dim, but among the most long-lived hydrogen-fusing stars."},
+{name:"Sigma Draconis",temp:5297,lum:0.43,type:"K0V",color:"#ffc860",category:"Main Sequence",desc:"Alsafi — a slightly metal-poor solar-type star 18.8 light-years away, once a SETI target.",classify:"K0 dwarfs are just slightly cooler than the Sun with similar main-sequence lifespans."},
+{name:"Beta Aquilae",temp:5150,lum:6.2,type:"G8IV",color:"#ffd878",category:"Subgiant",desc:"Alshain — a G subgiant just beginning to swell off the main sequence toward giant status.",classify:"G subgiants bridge the gap between Sun-like main-sequence stars and the red giant branch."},
+{name:"Mu Herculis",temp:5560,lum:2.6,type:"G5IV",color:"#ffd878",category:"Subgiant",desc:"A solar-type star slightly evolved off the main sequence, 27 light-years away.",classify:"G5 subgiants are aging Sun-like stars that have expanded slightly after most core hydrogen is consumed."},
+{name:"Eta Bootis",temp:6100,lum:9.0,type:"G0IV",color:"#fff5d0",category:"Subgiant",desc:"Muphrid — a subgiant near Arcturus, slightly hotter and less evolved than a full giant.",classify:"G0 subgiants have left the main sequence but have not yet begun the rapid giant-branch ascent."},
+{name:"Groombridge 1618",temp:4900,lum:0.24,type:"K8V",color:"#ff9820",category:"Main Sequence",desc:"An active flare star 15.9 light-years away exhibiting strong chromospheric emission lines.",classify:"K8 dwarfs are near the M-type boundary. Their flares can strip atmospheres from closely orbiting planets."},
+{name:"GJ 667C",temp:3300,lum:0.0137,type:"M1.5V",color:"#ff6050",category:"Main Sequence",desc:"Part of a triple-star system 23 light-years away, hosting at least two habitable zone planets.",classify:"M1 dwarfs at the upper end of the M class are more luminous and less flare-prone than cooler M stars."},
+{name:"Kapteyn's Star",temp:3570,lum:0.0112,type:"M2V",color:"#ff6644",category:"Main Sequence",desc:"One of the oldest nearby stars at 11.5 billion years old, with two proposed super-Earths.",classify:"Old M dwarfs hint at the extraordinary longevity of red dwarfs. They will far outlast the Sun."},
+{name:"LHS 1140",temp:3216,lum:0.00450,type:"M4.5V",color:"#ff4422",category:"Main Sequence",desc:"A quiet M dwarf 49 light-years away with a super-Earth sitting in the habitable zone.",classify:"Quiet M dwarfs without extreme flaring are the most favorable red-dwarf hosts for surface life."},
+{name:"AD Leonis",temp:3370,lum:0.02,type:"M3V",color:"#ff5540",category:"Main Sequence",desc:"A typical M3 flare star 16 light-years away, a benchmark for chromospheric activity studies.",classify:"Active M dwarfs like AD Leo emit powerful X-ray and UV flares that can strip the atmospheres of nearby planets."},
+{name:"YZ Ceti",temp:3056,lum:0.00172,type:"M4.5V",color:"#ff4422",category:"Main Sequence",desc:"A tiny faint red dwarf 12 light-years away hosting three known rocky planets.",classify:"Compact multi-planet systems around M dwarfs may be the most common planetary architecture in the universe."},
+{name:"GJ 1061",temp:2953,lum:0.00156,type:"M5.5V",color:"#ff2200",category:"Main Sequence",desc:"An ultra-cool red dwarf 12 light-years away with three potentially habitable zone planets.",classify:"M dwarfs are the most common stars by far — they vastly outnumber all other stellar classes combined."},
+{name:"Ross 128",temp:3192,lum:0.00362,type:"M4V",color:"#ff5533",category:"Main Sequence",desc:"An unusually quiet red dwarf 11 light-years away hosting a potentially temperate exoplanet.",classify:"Quiet M dwarfs without strong flares are the best candidates for hosting planets with stable surface conditions."},
+{name:"EZ Aquarii",temp:2800,lum:0.00006,type:"M5V",color:"#ff2200",category:"Main Sequence",desc:"A faint triple M-dwarf system 11.3 light-years away — all three components are red dwarfs.",classify:"M dwarfs in multiple systems are extremely common in the galaxy. Their low luminosity makes study challenging."},
+{name:"Luyten 726-8 A",temp:2670,lum:0.000060,type:"M5.5V",color:"#ff2200",category:"Main Sequence",desc:"Part of the Luyten 726-8 binary flare-star system, 8.7 light-years away.",classify:"These ultra-dim M dwarfs are so faint they can only be detected within our immediate stellar neighborhood."},
+{name:"Stein 2051 B",temp:7300,lum:0.00060,type:"DC",color:"#fff0f0",category:"White Dwarf",desc:"A featureless-spectrum white dwarf used in a landmark 2017 gravitational lensing test of GR.",classify:"DC white dwarfs are too cool to show spectral features. Their gravity bends background starlight, confirming GR."},
+{name:"Delta Pavonis",temp:5604,lum:1.22,type:"G8IV",color:"#ffe070",category:"Subgiant",desc:"A possible solar twin gently evolving off the main sequence, often cited in habitability studies.",classify:"G8 subgiants are slightly more evolved than the Sun — their habitable zones are slowly shifting outward."},
+{name:"Algol B",temp:7600,lum:6.9,type:"F2IV",color:"#fff8e0",category:"Subgiant",desc:"The fainter component of the eclipsing binary Algol — being stripped of mass by its companion.",classify:"Subgiants in mass-transferring binaries evolve differently from isolated stars due to tidal interactions."},
+{name:"Eta Aquilae",temp:5765,lum:3000,type:"F6Ib",color:"#fffac0",category:"Supergiant",desc:"A bright Cepheid variable in Aquila, pulsating with a 7.18-day period.",classify:"Longer-period Cepheids are more luminous — this period-luminosity relation is their power as distance indicators."},
+{name:"Zeta Geminorum",temp:5800,lum:2900,type:"F7Ib",color:"#fffac0",category:"Supergiant",desc:"Mekbuda — a bright Cepheid used to calibrate distances to the Gemini OB1 association.",classify:"Cepheids in star clusters are especially valuable for anchoring the period-luminosity distance calibration."},
+{name:"Alpha Pavonis",temp:17711,lum:2200,type:"B2IV",color:"#d5e8ff",category:"Subgiant",desc:"Peacock — the brightest star in Pavo, a spectroscopic binary with a 12-day orbital period.",classify:"B2 subgiants have left the main sequence but have not yet become full bright giants."},
+{name:"Chi Cygni",temp:2000,lum:10000,type:"S6e",color:"#dd1100",category:"Giant",desc:"An extreme Mira variable that varies by 10 magnitudes — one of the largest brightness swings known.",classify:"S-type AGB stars have zirconium oxide and carbon monoxide in spectra, formed by deep convective dredge-up events."},
+{name:"Gamma Virginis",temp:6757,lum:4.5,type:"F0V",color:"#fff9ee",category:"Main Sequence",desc:"Porrima — a famous visual binary of two nearly identical F stars currently separating.",classify:"F0 dwarfs are hotter Sun-like stars with partially convective outer envelopes."},
+{name:"Beta Cassiopeiae",temp:7000,lum:27,type:"F2III",color:"#fff9ec",category:"Giant",desc:"Caph — a delta Scuti variable pulsating every few hours, part of the W of Cassiopeia.",classify:"F2 giants have exhausted core hydrogen and are slowly expanding."},
+{name:"Tau Bootis",temp:6399,lum:3.06,type:"F7V",color:"#fff4d0",category:"Main Sequence",desc:"An F-star hosting one of the first confirmed hot Jupiter exoplanets ever discovered.",classify:"F7 dwarfs sit between F and G types — slightly hotter than the Sun with shorter main-sequence lifespans."},
+{name:"18 Scorpii",temp:5747,lum:1.04,type:"G2Va",color:"#ffe87a",category:"Main Sequence",desc:"The closest known solar twin — nearly identical to our Sun in every measurable property.",classify:"Precise solar twins like 18 Sco let astronomers test whether the Sun is typical among G dwarfs."},
+{name:"61 Virginis",temp:5560,lum:0.83,type:"G7V",color:"#ffe070",category:"Main Sequence",desc:"A near-solar twin hosting three known super-Earth planets, 28 light-years distant.",classify:"G7 dwarfs are excellent solar analogs used to calibrate stellar models and planet occurrence rates."},
+{name:"Kappa Ceti",temp:5742,lum:0.85,type:"G5V",color:"#ffe070",category:"Main Sequence",desc:"A young, active solar analog that models what the Sun looked like 1 billion years ago.",classify:"Young G dwarfs are more chromospherically active and X-ray bright than older, calmer stars like our Sun."},
+{name:"Hamal",temp:4480,lum:91,type:"K2III",color:"#ffb840",category:"Giant",desc:"Alpha Arietis — a K giant 66 light-years away that served as North Star around 7,000 BCE.",classify:"Earth's 26,000-year precession slowly shifts which star sits at the celestial pole over time."},
+{name:"Vindemiatrix",temp:4990,lum:77,type:"G8III",color:"#ffd060",category:"Giant",desc:"Epsilon Virginis — a G giant 109 light-years away, historically crossed by the ecliptic.",classify:"G8 giants straddle the cool end of the yellow giant region in the HR diagram."},
+{name:"Beta Ophiuchi",temp:4467,lum:63,type:"K2III",color:"#ffb840",category:"Giant",desc:"Cebalrai — a typical K giant used as a standard radial velocity reference star.",classify:"K2 giants are well-studied benchmarks for testing red-giant stellar models and evolution theory."},
+{name:"R Leonis",temp:2800,lum:5000,type:"M8III",color:"#ff2200",category:"Giant",desc:"A Mira variable that swings from naked-eye visibility to invisibility over a 312-day period.",classify:"AGB stars like R Leo are shedding their outer layers, which will eventually form a glowing planetary nebula."},
+{name:"Castor A",temp:10286,lum:34,type:"A1V",color:"#f0f4ff",category:"Main Sequence",desc:"The brighter visual component of the sextuple Castor star system in Gemini.",classify:"A1 dwarfs show classic strong Balmer hydrogen lines that define the A spectral class."},
+{name:"Beta Pictoris",temp:8052,lum:8.7,type:"A6V",color:"#fdfaff",category:"Main Sequence",desc:"Famous for its edge-on debris disk and multiple directly imaged exoplanets.",classify:"Young A dwarfs like Beta Pic still host primordial disks from formation — prime targets for planet detection."},
+];
+
+const TEMP_MIN=2000,TEMP_MAX=60000,LUM_MIN_LOG=-4.5,LUM_MAX_LOG=6.5;
+const SNAP_FRAC=0.18;
+function tX(t,W){const v=Math.log10(t),mn=Math.log10(TEMP_MIN),mx=Math.log10(TEMP_MAX);return W*(1-(v-mn)/(mx-mn));}
+function lY(l,H){const v=Math.log10(l);return H*(1-(v-LUM_MIN_LOG)/(LUM_MAX_LOG-LUM_MIN_LOG));}
+function xToTemp(x,W){return Math.max(TEMP_MIN,Math.min(TEMP_MAX,Math.pow(10,(1-x/W)*(Math.log10(TEMP_MAX)-Math.log10(TEMP_MIN))+Math.log10(TEMP_MIN))));}
+function yToLum(y,H){return Math.pow(10,Math.max(LUM_MIN_LOG,Math.min(LUM_MAX_LOG,(1-y/H)*(LUM_MAX_LOG-LUM_MIN_LOG)+LUM_MIN_LOG)));}
+function lMag(l){return(4.83-2.5*Math.log10(Math.max(l,1e-9))).toFixed(1);}
+function lDisp(l){if(l>=1e6)return(l/1e6).toFixed(1)+'M L';if(l>=1000)return(l/1000).toFixed(1)+'K L';if(l>=1)return l.toFixed(2)+' L';return l.toExponential(2)+' L';}
+function updateCoords(lx,ly){
+  const t=xToTemp(lx,CW),l=yToLum(ly,CH);
+  document.getElementById('coordTemp').textContent='T: '+(t>=10000?Math.round(t/100)*100:Math.round(t/10)*10)+' K';
+  document.getElementById('coordLum').textContent='L: '+(l>=1000?(l/1000).toFixed(1)+'K':l>=1?l.toFixed(2):l.toExponential(1));
+  document.getElementById('coordMag').textContent='M: '+(4.83-2.5*Math.log10(Math.max(l,1e-9))).toFixed(1);
+  document.getElementById('coordPanel').classList.add('active');
+}
+function hideCoords(){document.getElementById('coordPanel').classList.remove('active');}
+
+const canvas=document.getElementById('hrCanvas');
+const ctx=canvas.getContext('2d');
+let CW,CH,plotted={},currentStarIdx=null;
+let hrInitialized=false;
+
+function initHR(){
+  hrInitialized=true;
+  setupCanvas();
+  buildQueue();
+  updateProgress();
+}
+function setupCanvas(){
+  const wrap=document.getElementById('diagramWrap');
+  const aw=wrap.clientWidth-84;
+  CW=aw; CH=Math.round(aw*1.15);
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=CW*dpr; canvas.height=CH*dpr;
+  canvas.style.width=CW+'px'; canvas.style.height=CH+'px';
+  ctx.scale(dpr,dpr);
+  document.getElementById('yLabLeft').innerHTML='';
+  document.getElementById('yLabRight').innerHTML='';
+  ['10^6','10^4','100','1','0.01','10^-4'].forEach(s=>{const el=document.createElement('span');el.textContent=s;document.getElementById('yLabLeft').appendChild(el);});
+  ['-10','-5','0','+5','+10','+15'].forEach(s=>{const el=document.createElement('span');el.textContent=s;document.getElementById('yLabRight').appendChild(el);});
+  drawDiagram();
+}
+function drawDiagram(showTarget,dragStar){
+  ctx.clearRect(0,0,CW,CH);
+  const bg=ctx.createLinearGradient(0,0,0,CH);bg.addColorStop(0,'#010208');bg.addColorStop(1,'#020312');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,CW,CH);
+  ctx.save();ctx.globalAlpha=0.06;
+  ctx.beginPath();ctx.moveTo(tX(58000,CW)-28,lY(1e7,CH)-18);ctx.lineTo(tX(58000,CW)+38,lY(1e7,CH)+18);
+  ctx.lineTo(tX(2400,CW)+28,lY(0.000030,CH)+18);ctx.lineTo(tX(2400,CW)-38,lY(0.000030,CH)-18);
+  ctx.closePath();ctx.fillStyle='#5588ff';ctx.fill();ctx.restore();
+  ctx.strokeStyle='rgba(130,200,255,0.30)';ctx.lineWidth=0.8;
+  for(let lv=LUM_MIN_LOG;lv<=LUM_MAX_LOG;lv++){const y=lY(Math.pow(10,lv),CH);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+  const tvs=[50000,40000,30000,20000,10000,7000,5000,3500,2500];
+  for(const t of tvs){const x=tX(t,CW);ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+  ctx.strokeStyle='rgba(255,255,255,0.97)';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,CH);ctx.lineTo(CW,CH);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(CW,0);ctx.lineTo(CW,CH);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.92)';ctx.lineWidth=2;
+  for(let lv=LUM_MIN_LOG;lv<=LUM_MAX_LOG;lv++){const y=lY(Math.pow(10,lv),CH);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(10,y);ctx.stroke();ctx.beginPath();ctx.moveTo(CW,y);ctx.lineTo(CW-10,y);ctx.stroke();}
+  for(const t of tvs){const x=tX(t,CW);ctx.beginPath();ctx.moveTo(x,CH);ctx.lineTo(x,CH-10);ctx.stroke();ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,10);ctx.stroke();}
+  ctx.textAlign='center';ctx.font='bold 9px Orbitron,monospace';
+  ctx.fillStyle='rgba(100,160,255,0.60)';ctx.save();ctx.translate(CW*0.38,CH*0.46);ctx.rotate(-0.96);ctx.fillText('MAIN SEQUENCE',0,0);ctx.restore();
+  ctx.fillStyle='rgba(255,165,60,0.60)';ctx.fillText('GIANTS',CW*0.17,CH*0.31);
+  ctx.fillStyle='rgba(255,220,100,0.60)';ctx.fillText('SUPERGIANTS',CW*0.52,CH*0.06);
+  ctx.fillStyle='rgba(200,230,255,0.60)';ctx.fillText('WHITE DWARFS',CW*0.17,CH*0.85);
+  for(const name of Object.keys(plotted)){const s=STARS.find(x=>x.name===name);if(s)drawStar(s,tX(s.temp,CW),lY(s.lum,CH),sR(s),1);}
+  if(showTarget&&dragStar){
+    const tx=tX(dragStar.temp,CW),ty=lY(dragStar.lum,CH),sr=Math.min(CW,CH)*SNAP_FRAC;
+    ctx.save();ctx.globalAlpha=0.2;ctx.strokeStyle='#4af';ctx.lineWidth=1;
+    ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(tx,ty,sr,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);ctx.globalAlpha=0.12;
+    ctx.beginPath();ctx.moveTo(tx-sr,ty);ctx.lineTo(tx+sr,ty);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(tx,ty-sr);ctx.lineTo(tx,ty+sr);ctx.stroke();
+    ctx.restore();
+  }
+}
+function sR(s){const l=Math.log10(Math.max(s.lum,1e-5));return Math.max(1.2,Math.min(1.44+(l+4.5)*0.224,3.2));}
+function sRFlight(s){const l=Math.log10(Math.max(s.lum,1e-5));return Math.max(2,Math.min(2.5+(l+4.5)*0.75,8.5));}
+function drawStar(s,x,y,r,alpha){
+  ctx.save();ctx.globalAlpha=alpha;
+  const grd=ctx.createRadialGradient(x,y,0,x,y,r*4.5);
+  grd.addColorStop(0,s.color+'dd');grd.addColorStop(1,s.color+'00');
+  ctx.beginPath();ctx.arc(x,y,r*4.5,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill();
+  ctx.beginPath();ctx.arc(x-r*0.28,y-r*0.28,r*0.38,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.75)';ctx.fill();
+  ctx.restore();
+}
+
+// FLIGHT
+let flightActive=false,flightStarIdx=null,shipX=0,shipY=0,velX=0,velY=0,joyDX=0,joyDY=0,thrusting=false,joyTouchId=null,thrustTouchId=null,flightRAF=null;
+const THRUST_FORCE=0.32,FRICTION=0.88,MAX_VEL=6;
+let joyBase,joyKnob,thrustBtn;
+
+function initJoyRefs(){
+  joyBase=document.getElementById('joystickBase');
+  joyKnob=document.getElementById('joystickKnob');
+  thrustBtn=document.getElementById('thrustBtn');
+  joyBase.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];handleJoyStart(t.clientX,t.clientY,t.identifier);},{passive:false});
+  joyBase.addEventListener('mousedown',e=>{e.preventDefault();handleJoyStart(e.clientX,e.clientY,'mouse');const mm=ev=>handleJoyMove(ev.clientX,ev.clientY);const mu=()=>{handleJoyEnd();document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});
+  thrustBtn.addEventListener('touchstart',e=>{e.preventDefault();thrusting=true;thrustTouchId=e.changedTouches[0].identifier;thrustBtn.classList.add('pressed');joyKnob.classList.add('thrusting');},{passive:false});
+  thrustBtn.addEventListener('mousedown',e=>{e.preventDefault();thrusting=true;thrustBtn.classList.add('pressed');joyKnob.classList.add('thrusting');const mu=()=>{thrusting=false;thrustBtn.classList.remove('pressed');joyKnob.classList.remove('thrusting');document.removeEventListener('mouseup',mu);};document.addEventListener('mouseup',mu);});
+}
+function getJoyCenter(){const r=joyBase.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,rad:r.width/2};}
+function handleJoyStart(cx,cy,tid){joyTouchId=tid;updateJoyPos(cx,cy);}
+function handleJoyMove(cx,cy){updateJoyPos(cx,cy);}
+function handleJoyEnd(){joyDX=0;joyDY=0;joyTouchId=null;joyKnob.style.left='50%';joyKnob.style.top='50%';joyKnob.style.transform='translate(-50%,-50%)';}
+function updateJoyPos(cx,cy){const c=getJoyCenter();let dx=cx-c.x,dy=cy-c.y;const dist=Math.hypot(dx,dy),maxR=c.rad*0.72;if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}joyKnob.style.left=(c.rad+dx)+'px';joyKnob.style.top=(c.rad+dy)+'px';joyKnob.style.transform='translate(-50%,-50%)';joyDX=dx/maxR;joyDY=dy/maxR;}
+document.addEventListener('touchmove',e=>{if(!flightActive)return;for(const t of e.changedTouches){if(t.identifier===joyTouchId)handleJoyMove(t.clientX,t.clientY);}},{passive:false});
+document.addEventListener('touchend',e=>{if(!flightActive)return;for(const t of e.changedTouches){if(t.identifier===joyTouchId)handleJoyEnd();if(t.identifier===thrustTouchId){thrusting=false;thrustTouchId=null;thrustBtn.classList.remove('pressed');joyKnob.classList.remove('thrusting');}}},{passive:false});
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(browseMode){const t=e.touches[0];handleCanvasTap(t.clientX,t.clientY);}
+},{passive:false});
+canvas.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+canvas.addEventListener('click',e=>{if(browseMode)handleCanvasTap(e.clientX,e.clientY);});
+
+function flightLoop(){
+  if(!flightActive)return;
+  const s=STARS[flightStarIdx];
+  if(thrusting&&(Math.abs(joyDX)>0.05||Math.abs(joyDY)>0.05)){velX+=joyDX*THRUST_FORCE;velY+=joyDY*THRUST_FORCE;const spd=Math.hypot(velX,velY);if(spd>MAX_VEL){velX=velX/spd*MAX_VEL;velY=velY/spd*MAX_VEL;}}
+  velX*=FRICTION;velY*=FRICTION;
+  shipX+=velX;shipY+=velY;
+  shipX=Math.max(0,Math.min(CW,shipX));shipY=Math.max(0,Math.min(CH,shipY));
+  const tx=tX(s.temp,CW),ty=lY(s.lum,CH),snapR=Math.min(CW,CH)*SNAP_FRAC;
+  const dist=Math.hypot(shipX-tx,shipY-ty),nearSnap=dist<snapR;
+  document.getElementById('lockBtn').classList.toggle('show',nearSnap);
+  const ring=document.getElementById('snapRing');
+  if(nearSnap){const rect=canvas.getBoundingClientRect();const scX=rect.width/CW,scY=rect.height/CH;ring.style.cssText=`display:block;width:${snapR*2*scX}px;height:${snapR*2*scY}px;left:${tx*scX+42}px;top:${ty*scY}px;border-radius:50%;pointer-events:none;z-index:20;position:absolute;border:2px solid #4f8;animation:snapPulse 0.5s ease infinite alternate;transform:translate(-50%,-50%);`;}else{ring.style.display='none';}
+  updateCoords(shipX,shipY);
+  drawFlightFrame(s,nearSnap,tx,ty,snapR);
+  const infoEl=document.getElementById('flightInfo');
+  if(nearSnap)infoEl.innerHTML='<span class="snap-near">&#9654; IN RANGE! TAP LOCK IN!</span>';
+  else infoEl.innerHTML='SPD: '+Math.hypot(velX,velY).toFixed(1)+'<br>PROX: '+Math.round((1-Math.min(dist/(Math.min(CW,CH)*0.7),1))*100)+'%';
+  flightRAF=requestAnimationFrame(flightLoop);
+}
+function drawFlightFrame(s,nearSnap,tx,ty,snapR){
+  drawDiagram(true,s);
+  ctx.save();
+  if(Math.abs(velX)>0.1||Math.abs(velY)>0.1){
+    const trailLen=Math.min(Math.hypot(velX,velY)*3.5,28),angle=Math.atan2(-velY,-velX);
+    const grd=ctx.createLinearGradient(shipX,shipY,shipX+Math.cos(angle)*trailLen,shipY+Math.sin(angle)*trailLen);
+    grd.addColorStop(0,s.color+'cc');grd.addColorStop(1,s.color+'00');
+    ctx.beginPath();ctx.moveTo(shipX+Math.cos(angle+1.4)*5,shipY+Math.sin(angle+1.4)*5);
+    ctx.lineTo(shipX+Math.cos(angle)*trailLen,shipY+Math.sin(angle)*trailLen);
+    ctx.lineTo(shipX+Math.cos(angle-1.4)*5,shipY+Math.sin(angle-1.4)*5);
+    ctx.strokeStyle=grd;ctx.lineWidth=3;ctx.stroke();
+  }
+  if(thrusting&&(Math.abs(joyDX)>0.05||Math.abs(joyDY)>0.05)){
+    const fa=Math.atan2(-joyDY,-joyDX);
+    for(let i=0;i<3;i++){const fr=8+Math.random()*12,foff=(Math.random()-0.5)*0.5;const fg=ctx.createRadialGradient(shipX,shipY,0,shipX+Math.cos(fa+foff)*fr,shipY+Math.sin(fa+foff)*fr,fr*0.5);fg.addColorStop(0,'rgba(255,230,100,0.9)');fg.addColorStop(0.4,'rgba(255,100,20,0.6)');fg.addColorStop(1,'rgba(255,60,0,0)');ctx.beginPath();ctx.arc(shipX+Math.cos(fa+foff)*fr*0.5,shipY+Math.sin(fa+foff)*fr*0.5,fr*0.7,0,Math.PI*2);ctx.fillStyle=fg;ctx.fill();}
+  }
+  ctx.restore();
+  drawStar(s,shipX,shipY,sRFlight(s)*1.4,1.0);
+  ctx.save();ctx.globalAlpha=0.12;ctx.strokeStyle='#4af';ctx.lineWidth=0.8;ctx.setLineDash([3,6]);
+  ctx.beginPath();ctx.moveTo(shipX,shipY);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+function startFlight(idx){
+  flightStarIdx=idx;flightActive=true;
+  shipX=CW/2;shipY=CH/2;velX=0;velY=0;joyDX=0;joyDY=0;thrusting=false;
+  joyKnob.style.left='50%';joyKnob.style.top='50%';joyKnob.style.transform='translate(-50%,-50%)';
+  joyKnob.classList.remove('thrusting');
+  document.getElementById('lockBtn').classList.remove('show');
+  document.getElementById('joystickPanel').classList.add('active');
+  document.getElementById('dragBanner').classList.add('show');
+  document.getElementById('coordPanel').classList.add('active');
+  document.getElementById('flightInfo').textContent='STEER + THRUST TO FLY!';
+  updateCoords(shipX,shipY);
+  if(flightRAF)cancelAnimationFrame(flightRAF);
+  flightRAF=requestAnimationFrame(flightLoop);
+}
+function stopFlight(){
+  flightActive=false;
+  if(flightRAF){cancelAnimationFrame(flightRAF);flightRAF=null;}
+  document.getElementById('joystickPanel').classList.remove('active');
+  document.getElementById('dragBanner').classList.remove('show');
+  document.getElementById('snapRing').style.display='none';
+  document.getElementById('lockBtn').classList.remove('show');
+  hideCoords();joyDX=0;joyDY=0;thrusting=false;
+  if(thrustBtn){thrustBtn.classList.remove('pressed');}
+  if(joyKnob){joyKnob.classList.remove('thrusting');}
+}
+function lockStar(){
+  if(!flightActive)return;
+  const s=STARS[flightStarIdx];
+  if(Math.hypot(shipX-tX(s.temp,CW),shipY-lY(s.lum,CH))<Math.min(CW,CH)*SNAP_FRAC){stopFlight();completePlot(flightStarIdx);}
+}
+function missHint(){
+  const b=document.getElementById('dragBanner');
+  b.style.background='rgba(50,10,0,0.95)';b.style.borderBottomColor='#f84';b.style.color='#f84';
+  b.innerHTML='<span class="afl-s">!</span> NOT CLOSE ENOUGH &mdash; STEER &amp; THRUST CLOSER! <span class="afl-s">!</span>';
+  b.classList.add('show');
+  setTimeout(()=>{b.style.background='';b.style.borderBottomColor='';b.style.color='';b.innerHTML='<span class="afl-s">&#9654;</span> FLY THE STAR TO ITS CORRECT POSITION <span class="afl-s">&#9654;</span>';b.classList.remove('show');if(currentStarIdx!==null&&!plotted[STARS[currentStarIdx].name])startFlight(currentStarIdx);},2200);
+}
+function completePlot(idx){
+  const s=STARS[idx];plotted[s.name]=true;
+  animateSnap(s,()=>{drawDiagram();updateProgress();document.getElementById('chip-'+idx).classList.add('plotted-chip');closeCard();
+    if(Object.keys(plotted).length===STARS.length){setTimeout(()=>document.getElementById('completeBanner').classList.add('show'),700);return;}
+    const ni=nextUnplotted();if(ni!==null)setTimeout(()=>openCard(ni),500);
+  });
+}
+function animateSnap(s,cb){const tx=tX(s.temp,CW),ty=lY(s.lum,CH),r=sRFlight(s);let f=0;const tot=20;function step(){drawDiagram();const p=f/tot,e=1-Math.pow(1-p,3);ctx.save();ctx.globalAlpha=(1-e)*0.9;ctx.strokeStyle='#4f8';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(tx,ty,r*2+(r*9)*e,0,Math.PI*2);ctx.stroke();ctx.restore();drawStar(s,tx,ty,r*(1+Math.sin(p*Math.PI)*0.9),1);f++;if(f<=tot)requestAnimationFrame(step);else cb();}requestAnimationFrame(step);}
+function nextUnplotted(){for(let i=0;i<STARS.length;i++)if(!plotted[STARS[i].name])return i;return null;}
+function buildQueue(){const sc=document.getElementById('queueScroll');sc.innerHTML='';STARS.forEach((s,i)=>{const chip=document.createElement('div');chip.className='star-chip'+(plotted[s.name]?' plotted-chip':'');chip.id='chip-'+i;chip.innerHTML=`<div class="chip-dot" style="background:${s.color};box-shadow:0 0 6px ${s.color}"></div><span class="chip-name">${s.name}</span>`;chip.addEventListener('click',()=>openCard(i));chip.addEventListener('touchstart',e=>{e.preventDefault();openCard(i);},{passive:false});sc.appendChild(chip);});highlightNext();}
+function highlightNext(){document.querySelectorAll('.star-chip').forEach(c=>c.classList.remove('next-chip'));const ni=nextUnplotted();if(ni!==null){const c=document.getElementById('chip-'+ni);if(c){c.classList.add('next-chip');c.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}}}
+let reviewOpen=false;
+function openCard(idx){
+  const s=STARS[idx];currentStarIdx=idx;reviewOpen=false;
+  document.getElementById('reviewPanel').classList.remove('open');
+  document.getElementById('reviewBtn').innerHTML='&#128269; SHOW STATS TO HELP PLACE THIS STAR';
+  const vis=document.getElementById('cardVisual');
+  vis.style.cssText=`width:56px;height:56px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 35% 35%,#fff 0%,${s.color} 40%,${s.color}55 100%);box-shadow:0 0 28px ${s.color}99;`;
+  document.getElementById('cardName').textContent=s.name;
+  document.getElementById('cardClass').textContent=s.type+' · '+s.category;
+  document.getElementById('cardStats').innerHTML=`<div class="card-stat"><div class="stat-label">Temperature</div><div class="stat-value">${s.temp.toLocaleString()} K</div></div><div class="card-stat"><div class="stat-label">Luminosity</div><div class="stat-value">${lDisp(s.lum)}&#9737;</div></div><div class="card-stat"><div class="stat-label">Abs. Magnitude</div><div class="stat-value">${lMag(s.lum)}</div></div><div class="card-stat"><div class="stat-label">Spectral Type</div><div class="stat-value">${s.type}</div></div>`;
+  document.getElementById('cardDesc').textContent=s.desc;
+  document.getElementById('cardClassify').innerHTML=`<strong>CLASSIFICATION:</strong> ${s.classify}`;
+  document.getElementById('reviewPanel').innerHTML=`<strong>Quick Reference:</strong><br>Temp: <strong>${s.temp.toLocaleString()} K</strong> | Lum: <strong>${lDisp(s.lum)}</strong><br>Hot=LEFT Bright=TOP Dim=BOTTOM<br>Type: <strong>${s.category}</strong>`;
+  const btn=document.getElementById('plotBtn');
+  if(plotted[s.name]){btn.innerHTML='&#10003; ALREADY PLOTTED';btn.className='plot-btn plotted-btn';btn.onclick=()=>closeCard();}
+  else{btn.innerHTML='&#9733; LAUNCH STAR &mdash; FLY TO POSITION';btn.className='plot-btn';btn.onclick=()=>initiateDrag();}
+  document.getElementById('cardCloseBtn').onclick=()=>closeCard();
+  document.querySelectorAll('.star-chip').forEach(c=>c.classList.remove('active-chip'));
+  const chip=document.getElementById('chip-'+idx);if(chip){chip.classList.add('active-chip');chip.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+  document.getElementById('cardOverlay').classList.add('visible');
+}
+function closeCard(){document.getElementById('cardOverlay').classList.remove('visible');document.querySelectorAll('.star-chip').forEach(c=>c.classList.remove('active-chip'));currentStarIdx=null;if(!browseMode)stopFlight();}
+function initiateDrag(){if(currentStarIdx===null)return;if(plotted[STARS[currentStarIdx].name]){closeCard();return;}document.getElementById('cardOverlay').classList.remove('visible');document.querySelectorAll('.star-chip').forEach(c=>c.classList.remove('active-chip'));startFlight(currentStarIdx);}
+function toggleReview(){reviewOpen=!reviewOpen;document.getElementById('reviewPanel').classList.toggle('open',reviewOpen);document.getElementById('reviewBtn').innerHTML=reviewOpen?'&#10006; HIDE STATS':'&#128269; SHOW STATS TO HELP PLACE THIS STAR';}
+function updateProgress(){const n=Object.keys(plotted).length;document.getElementById('progFill').style.width=(n/STARS.length*100)+'%';document.getElementById('progLabel').textContent=`${n} / ${STARS.length} STARS PLOTTED`;highlightNext();}
+let browseMode=false;
+
+function enterBrowseMode(){
+  document.getElementById('completeBanner').classList.remove('show');
+  browseMode=true;
+  const bar=document.getElementById('browseBar');
+  bar.style.display='flex';
+}
+
+function exitBrowseMode(){
+  browseMode=false;
+  document.getElementById('browseBar').style.display='none';
+  document.getElementById('completeBanner').classList.add('show');
+}
+
+function restart(){
+  plotted={}; currentStarIdx=null; browseMode=false; stopFlight();
+  document.getElementById('completeBanner').classList.remove('show');
+  document.getElementById('browseBar').style.display='none';
+  drawDiagram(); buildQueue(); updateProgress();
+}
+
+function findNearestPlottedStar(canvasX, canvasY){
+  let best=null, bestDist=Infinity;
+  const hitR=Math.min(CW,CH)*0.06; // generous hit radius
+  for(const name of Object.keys(plotted)){
+    const s=STARS.find(x=>x.name===name);
+    if(!s) continue;
+    const sx=tX(s.temp,CW), sy=lY(s.lum,CH);
+    const d=Math.hypot(canvasX-sx, canvasY-sy);
+    if(d<hitR&&d<bestDist){bestDist=d;best=s;}
+  }
+  return best;
+}
+
+function handleCanvasTap(clientX, clientY){
+  if(!browseMode) return;
+  const rect=canvas.getBoundingClientRect();
+  const lx=(clientX-rect.left)*(CW/rect.width);
+  const ly=(clientY-rect.top)*(CH/rect.height);
+  const s=findNearestPlottedStar(lx, ly);
+  if(s){
+    const idx=STARS.indexOf(s);
+    openCard(idx);
+    // Override the plot button for browse mode — show "CLOSE" not "LAUNCH"
+    const btn=document.getElementById('plotBtn');
+    btn.innerHTML='&#10003; PLOTTED &mdash; TAP TO CLOSE';
+    btn.className='plot-btn plotted-btn';
+    btn.onclick=()=>closeCard();
+  }
+}
+
+// EXPLORE
+let exCanvas,exCtx,exW,exH,exZoom=1,exPanX=0,exPanY=0,exPinchDist=null,exDragStart=null,exPanStart=null,exTouches=[];
+// Scale factors: how main canvas coords map into the explore container
+let exScaleX=1, exScaleY=1, exOffX=0, exOffY=0;
+
+function enterExploreMode(){
+  document.getElementById('completeBanner').classList.remove('show');
+  const ov=document.getElementById('exploreOverlay');
+  ov.style.display='flex';ov.style.flexDirection='column';
+  setupExploreCanvas();
+}
+
+function exitExploreMode(){
+  document.getElementById('exploreOverlay').style.display='none';
+  document.getElementById('completeBanner').classList.add('show');
+}
+
+function setupExploreCanvas(){
+  const container=document.getElementById('exploreContainer');
+  exCanvas=document.getElementById('exploreCanvas');
+  exCtx=exCanvas.getContext('2d');
+  exW=container.clientWidth;
+  exH=container.clientHeight;
+  const dpr=window.devicePixelRatio||1;
+  exCanvas.width=exW*dpr; exCanvas.height=exH*dpr;
+  exCanvas.style.width=exW+'px'; exCanvas.style.height=exH+'px';
+  exCtx.scale(dpr,dpr);
+  exZoom=1; exPanX=0; exPanY=0;
+  // Fit the main diagram (CW x CH) centered in the explore container
+  const fitScale=Math.min(exW/CW, exH/CH);
+  exScaleX=fitScale; exScaleY=fitScale;
+  exOffX=(exW-CW*fitScale)/2;
+  exOffY=(exH-CH*fitScale)/2;
+  exPanX=exOffX; exPanY=exOffY;
+  exZoom=fitScale;
+  bindExploreEvents();
+  drawExplore();
+}
+
+function drawExplore(){
+  if(!exCtx) return;
+  exCtx.clearRect(0,0,exW,exH);
+  // Dark background behind the diagram
+  exCtx.fillStyle='#010208';
+  exCtx.fillRect(0,0,exW,exH);
+  // Stamp the main hrCanvas directly — pixel-perfect, identical diagram
+  exCtx.save();
+  exCtx.translate(exPanX, exPanY);
+  exCtx.scale(exZoom/exScaleX, exZoom/exScaleY); // exZoom relative to fitScale base
+  // Wait — simpler: just drawImage scaled
+  exCtx.restore();
+  // Draw the main canvas scaled and panned
+  const drawW=CW*(exZoom);
+  const drawH=CH*(exZoom);
+  exCtx.drawImage(canvas, exPanX, exPanY, drawW, drawH);
+}
+function eTX(t,W){const v=Math.log10(t),mn=Math.log10(TEMP_MIN),mx=Math.log10(TEMP_MAX);return W*(1-(v-mn)/(mx-mn));}
+function eLY(l,H){const v=Math.log10(Math.max(l,1e-9));return H*(1-(v-LUM_MIN_LOG)/(LUM_MAX_LOG-LUM_MIN_LOG));}
+
+function findNearestStar(cx,cy){
+  // Convert explore-canvas screen point to main-diagram logical coords
+  const diagX=(cx-exPanX)/exZoom;
+  const diagY=(cy-exPanY)/exZoom;
+  let best=null, bestDist=Infinity;
+  const hitR=Math.max(14, 18/exZoom);
+  for(const name of Object.keys(plotted)){
+    const s=STARS.find(x=>x.name===name);
+    if(!s) continue;
+    const sx=tX(s.temp,CW), sy=lY(s.lum,CH);
+    const d=Math.hypot(diagX-sx, diagY-sy);
+    if(d<hitR&&d<bestDist){bestDist=d;best=s;}
+  }
+  return best;
+}
+function bindExploreEvents(){exCanvas.addEventListener('touchstart',onExTouchStart,{passive:false});exCanvas.addEventListener('touchmove',onExTouchMove,{passive:false});exCanvas.addEventListener('touchend',onExTouchEnd,{passive:false});exCanvas.addEventListener('mousedown',onExMouseDown);exCanvas.addEventListener('wheel',onExWheel,{passive:false});}
+function onExTouchStart(e){e.preventDefault();exTouches=Array.from(e.touches);if(exTouches.length===1){exDragStart={x:exTouches[0].clientX,y:exTouches[0].clientY};exPanStart={x:exPanX,y:exPanY};exPinchDist=null;}else if(exTouches.length===2){exPinchDist=Math.hypot(exTouches[0].clientX-exTouches[1].clientX,exTouches[0].clientY-exTouches[1].clientY);exPanStart={x:exPanX,y:exPanY};const midX=(exTouches[0].clientX+exTouches[1].clientX)/2,midY=(exTouches[0].clientY+exTouches[1].clientY)/2;exDragStart={x:midX,y:midY,zoom:exZoom};}}
+function onExTouchMove(e){e.preventDefault();exTouches=Array.from(e.touches);if(exTouches.length===1&&exDragStart&&exPanStart){exPanX=exPanStart.x+(exTouches[0].clientX-exDragStart.x);exPanY=exPanStart.y+(exTouches[0].clientY-exDragStart.y);clampPan();drawExplore();}else if(exTouches.length===2&&exPinchDist!==null){const newDist=Math.hypot(exTouches[0].clientX-exTouches[1].clientX,exTouches[0].clientY-exTouches[1].clientY);const scale=newDist/exPinchDist;const midX=(exTouches[0].clientX+exTouches[1].clientX)/2,midY=(exTouches[0].clientY+exTouches[1].clientY)/2;const newZoom=Math.max(0.3,Math.min(12,exDragStart.zoom*scale));const rect=exCanvas.getBoundingClientRect();const cx=midX-rect.left,cy=midY-rect.top;exPanX=cx-(cx-exPanStart.x)*(newZoom/exDragStart.zoom)+(midX-exDragStart.x);exPanY=cy-(cy-exPanStart.y)*(newZoom/exDragStart.zoom)+(midY-exDragStart.y);exZoom=newZoom;clampPan();drawExplore();}}
+function onExTouchEnd(e){e.preventDefault();const touches=Array.from(e.changedTouches);if(e.touches.length===0&&exDragStart&&exPinchDist===null){const dx=touches[0].clientX-exDragStart.x,dy=touches[0].clientY-exDragStart.y;if(Math.hypot(dx,dy)<8){const rect=exCanvas.getBoundingClientRect();handleExTap(touches[0].clientX-rect.left,touches[0].clientY-rect.top);}}exTouches=[];exDragStart=null;exPanStart=null;exPinchDist=null;}
+let exMouseMoved=false,exPanAtMouseDown=null,exMouseDragStart=null;
+function onExMouseDown(e){exMouseDragStart={x:e.clientX,y:e.clientY};exPanAtMouseDown={x:exPanX,y:exPanY};exMouseMoved=false;const mm=ev=>{if(Math.hypot(ev.clientX-exMouseDragStart.x,ev.clientY-exMouseDragStart.y)>4)exMouseMoved=true;exPanX=exPanAtMouseDown.x+(ev.clientX-exMouseDragStart.x);exPanY=exPanAtMouseDown.y+(ev.clientY-exMouseDragStart.y);clampPan();drawExplore();};const mu=ev=>{if(!exMouseMoved){const rect=exCanvas.getBoundingClientRect();handleExTap(ev.clientX-rect.left,ev.clientY-rect.top);}document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);}
+function onExWheel(e){
+  e.preventDefault();
+  const rect=exCanvas.getBoundingClientRect();
+  const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+  const delta=e.deltaY>0?0.85:1.18;
+  const newZoom=Math.max(0.3,Math.min(12,exZoom*delta));
+  exPanX=cx-(cx-exPanX)*(newZoom/exZoom);
+  exPanY=cy-(cy-exPanY)*(newZoom/exZoom);
+  exZoom=newZoom;
+  clampPan(); drawExplore();
+}
+function clampPan(){
+  // Prevent panning so the diagram goes fully off screen
+  const drawW=CW*exZoom, drawH=CH*exZoom;
+  exPanX=Math.max(Math.min(exW,exW)-drawW, Math.min(exPanX, exW*0.5));
+  exPanY=Math.max(Math.min(exH,exH)-drawH, Math.min(exPanY, exH*0.5));
+}
+function handleExTap(cx,cy){const s=findNearestStar(cx,cy);if(s){document.getElementById('exploreHint').textContent='';showExploreCard(s);}else{document.getElementById('exploreHint').textContent='TAP ANY STAR POINT TO SEE ITS INFO';}}
+function showExploreCard(s){currentStarIdx=STARS.indexOf(s);const vis=document.getElementById('cardVisual');vis.style.cssText=`width:56px;height:56px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 35% 35%,#fff 0%,${s.color} 40%,${s.color}55 100%);box-shadow:0 0 28px ${s.color}99;`;document.getElementById('cardName').textContent=s.name;document.getElementById('cardClass').textContent=s.type+' · '+s.category;document.getElementById('cardStats').innerHTML=`<div class="card-stat"><div class="stat-label">Temperature</div><div class="stat-value">${s.temp.toLocaleString()} K</div></div><div class="card-stat"><div class="stat-label">Luminosity</div><div class="stat-value">${lDisp(s.lum)}&#9737;</div></div><div class="card-stat"><div class="stat-label">Abs. Magnitude</div><div class="stat-value">${lMag(s.lum)}</div></div><div class="card-stat"><div class="stat-label">Spectral Type</div><div class="stat-value">${s.type}</div></div>`;document.getElementById('cardDesc').textContent=s.desc;document.getElementById('cardClassify').innerHTML=`<strong>CLASSIFICATION:</strong> ${s.classify}`;document.getElementById('reviewPanel').classList.remove('open');const btn=document.getElementById('plotBtn');btn.innerHTML='&#10003; PLOTTED';btn.className='plot-btn plotted-btn';btn.onclick=()=>closeExploreCard();document.getElementById('cardCloseBtn').onclick=()=>closeExploreCard();document.getElementById('cardOverlay').style.zIndex='9000';document.getElementById('cardOverlay').classList.add('visible');}
+function closeExploreCard(){document.getElementById('cardOverlay').classList.remove('visible');document.getElementById('cardOverlay').style.zIndex='';document.getElementById('exploreHint').textContent='TAP ANY STAR POINT TO SEE ITS INFO';currentStarIdx=null;}
+
+// ══════════════════════════════════════════════════
+// MAGNITUDE MODULE
+// ══════════════════════════════════════════════════
+let magInitialized=false;
+
+// 10 objects: mix of stars, everyday objects, planets, deep sky
+const MAG_OBJECTS=[
+  {id:'sun',    name:'The Sun',         emoji:'☀️', hint:'Our star, seen up close',   appMag:-26.74, absMag:4.83,   distLy:0.000016, color:'#ffe87a'},
+  {id:'moon',   name:'Full Moon',       emoji:'🌕', hint:'Reflected sunlight',        appMag:-12.74, absMag:32.0,   distLy:0.000004, color:'#dde8ee'},
+  {id:'venus',  name:'Venus (brightest)',emoji:'🪐', hint:'Brightest planet',          appMag:-4.89,  absMag:28.0,   distLy:0.0000038,color:'#ffe8aa'},
+  {id:'sirius', name:'Sirius',          emoji:'⭐', hint:'Brightest night star',      appMag:-1.46,  absMag:1.42,   distLy:8.6,      color:'#f0f8ff'},
+  {id:'canopus',name:'Canopus',         emoji:'✨', hint:'2nd brightest night star',  appMag:-0.74,  absMag:-5.71,  distLy:310,      color:'#fffaf0'},
+  {id:'polaris',name:'Polaris',         emoji:'🌟', hint:'The North Star',            appMag:1.98,   absMag:-3.64,  distLy:433,      color:'#fffad0'},
+  {id:'androm', name:'Andromeda Galaxy',emoji:'🌌', hint:'Nearest large galaxy',      appMag:3.44,   absMag:-21.5,  distLy:2537000,  color:'#9988bb'},
+  {id:'candle', name:'Candle (1 meter)',emoji:'🕯️', hint:'Everyday light source',    appMag:null,   absMag:null,   distLy:null,     color:'#ffcc66', special:'candle'},
+  {id:'deneb',  name:'Deneb',           emoji:'💫', hint:'Tail of the Swan',          appMag:1.25,   absMag:-7.0,   distLy:2600,     color:'#f5f8ff'},
+  {id:'proxima',name:'Proxima Centauri',emoji:'🔴', hint:'Nearest star to the Sun',   appMag:11.13,  absMag:15.53,  distLy:4.24,     color:'#ff4422'},
+];
+// Correct order brightest→dimmest apparent magnitude (lower appMag = brighter)
+// Special: candle is extremely faint (would be ~appMag 6+ even at 1m, much worse than moon). We place it near bottom.
+// Sorted: sun(-26.74), moon(-12.74), venus(-4.89), sirius(-1.46), canopus(-0.74), polaris(1.98), deneb(1.25), andromeda(3.44), proxima(11.13), candle(last)
+// Correct apparent rank: sun, moon, venus, sirius, canopus, deneb, polaris, andromeda, proxima, candle
+const CORRECT_APPARENT_ORDER=['sun','moon','venus','sirius','canopus','deneb','polaris','androm','proxima','candle'];
+// Correct absolute rank (brightest true): andromeda(-21.5), canopus(-5.71), deneb(-7.0), polaris(-3.64), sirius(1.42), sun(4.83), proxima(15.53)... moon/venus/candle are solar system objects
+const CORRECT_ABSOLUTE_ORDER=['androm','deneb','canopus','polaris','sirius','sun','proxima','venus','moon','candle'];
+
+let rankOrder=[...MAG_OBJECTS]; // current user ordering
+let dragRankIdx=null, dragRankOver=null;
+
+function initMag(){
+  magInitialized=true;
+  rankOrder=[...MAG_OBJECTS];
+  shuffleArray(rankOrder);
+  buildRankList();
+  buildLumSection();
+}
+
+function shuffleArray(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
+
+function showMagTab(tab){
+  ['apparent','absolute','lum'].forEach(t=>{
+    document.getElementById(t+'Panel').classList.toggle('show',t==='absolute'||t==='lum'?false:false);
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  document.getElementById('apparentPanel').style.display=tab==='apparent'?'block':'none';
+  document.getElementById('absolutePanel').classList.toggle('show',tab==='absolute');
+  document.getElementById('lumPanel').classList.toggle('show',tab==='lum');
+  if(tab==='absolute') buildAbsoluteView();
+  if(tab==='lum') buildLumSection();
+}
+
+function buildRankList(){
+  const list=document.getElementById('rankList');
+  list.innerHTML='';
+  rankOrder.forEach((obj,i)=>{
+    const item=document.createElement('div');
+    item.className='rank-item';
+    item.dataset.id=obj.id;
+    item.draggable=true;
+    item.innerHTML=`<div class="rank-num">${i+1}</div><div class="rank-icon">${obj.emoji}</div><div class="rank-info"><div class="rank-name">${obj.name}</div><div class="rank-hint">${obj.hint}</div></div><div class="rank-dot" style="background:${obj.color};box-shadow:0 0 5px ${obj.color}"></div>`;
+    // Desktop drag
+    item.addEventListener('dragstart',e=>{dragRankIdx=i;item.classList.add('dragging');});
+    item.addEventListener('dragend',()=>{item.classList.remove('dragging');document.querySelectorAll('.rank-item').forEach(el=>el.classList.remove('drag-over'));dragRankIdx=null;});
+    item.addEventListener('dragover',e=>{e.preventDefault();if(dragRankIdx!==null&&dragRankIdx!==i){item.classList.add('drag-over');}});
+    item.addEventListener('dragleave',()=>item.classList.remove('drag-over'));
+    item.addEventListener('drop',e=>{e.preventDefault();if(dragRankIdx!==null&&dragRankIdx!==i){const moved=rankOrder.splice(dragRankIdx,1)[0];rankOrder.splice(i,0,moved);buildRankList();}});
+    // Touch drag
+    let touchStartY=0,touchStartIdx=0;
+    item.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY;touchStartIdx=i;item.classList.add('dragging');},{passive:true});
+    item.addEventListener('touchmove',e=>{
+      e.preventDefault();
+      const cy=e.touches[0].clientY;
+      const items=Array.from(list.querySelectorAll('.rank-item'));
+      items.forEach((el,idx)=>{
+        const r=el.getBoundingClientRect();
+        if(cy>r.top&&cy<r.bottom&&idx!==touchStartIdx){
+          if(dragRankIdx!==idx){dragRankIdx=idx;el.classList.add('drag-over');}
+        } else el.classList.remove('drag-over');
+      });
+    },{passive:false});
+    item.addEventListener('touchend',()=>{
+      item.classList.remove('dragging');
+      document.querySelectorAll('.rank-item').forEach(el=>el.classList.remove('drag-over'));
+      if(dragRankIdx!==null&&dragRankIdx!==touchStartIdx){
+        const moved=rankOrder.splice(touchStartIdx,1)[0];
+        rankOrder.splice(dragRankIdx,0,moved);
+        dragRankIdx=null;
+        buildRankList();
+      } else dragRankIdx=null;
+    });
+    list.appendChild(item);
+  });
+}
+
+function checkApparentRank(){
+  const userOrder=rankOrder.map(o=>o.id);
+  let correct=0;
+  CORRECT_APPARENT_ORDER.forEach((id,i)=>{if(userOrder[i]===id)correct++;});
+  const pct=Math.round(correct/CORRECT_APPARENT_ORDER.length*100);
+  const res=document.getElementById('checkResult');
+  res.classList.add('show');
+  if(pct===100){
+    res.className='check-result show right';
+    res.innerHTML='<strong>&#10003; PERFECT!</strong> You correctly ranked all 10 objects by apparent brightness!<br><br>Now check the <strong>Absolute</strong> tab to see how the order changes when everything is placed at the same distance!';
+  } else {
+    res.className='check-result show wrong';
+    const correctNames=CORRECT_APPARENT_ORDER.map(id=>MAG_OBJECTS.find(o=>o.id===id).name);
+    res.innerHTML=`<strong>${pct}% correct</strong> (${correct}/10 in right position).<br><br>The correct order from brightest to dimmest is:<br><strong>${correctNames.join(' &rarr; ')}</strong><br><br>Keep in mind: the Moon and Venus reflect sunlight but look brilliant because they are so close! Tap <strong>Absolute</strong> to see true brightness.`;
+    // Show answer
+    rankOrder=CORRECT_APPARENT_ORDER.map(id=>MAG_OBJECTS.find(o=>o.id===id));
+    buildRankList();
+  }
+}
+
+function buildAbsoluteView(){
+  // Draw apparent sky
+  drawMagSky('absCanvasApparent', CORRECT_APPARENT_ORDER, false);
+  drawMagSky('absCanvasAbsolute', CORRECT_ABSOLUTE_ORDER, true);
+  // Legend
+  const leg=document.getElementById('absLegend');
+  leg.innerHTML=MAG_OBJECTS.filter(o=>o.id!=='candle').map(o=>`<div class="abs-leg-item"><div class="abs-leg-dot" style="background:${o.color}"></div>${o.name}</div>`).join('');
+  // Rank comparison
+  const rl=document.getElementById('absRankList');
+  rl.innerHTML='';
+  CORRECT_ABSOLUTE_ORDER.forEach((id,absIdx)=>{
+    const obj=MAG_OBJECTS.find(o=>o.id===id);
+    const appIdx=CORRECT_APPARENT_ORDER.indexOf(id);
+    const change=appIdx-absIdx; // positive = moved up (brighter in absolute)
+    const changeStr=change>0?`&#9650;${change} brighter`:change<0?`&#9660;${Math.abs(change)} dimmer`:'same';
+    const changeClass=change>0?'up':change<0?'down':'same';
+    rl.innerHTML+=`<div class="abs-rank-item"><div class="abs-rank-pos">${absIdx+1}</div><div class="abs-rank-icon">${obj.emoji}</div><div class="abs-rank-name">${obj.name}</div><div class="abs-rank-val">${obj.absMag!==null?'M='+obj.absMag.toFixed(1):'N/A'}</div><div class="abs-rank-change ${changeClass}">${changeStr}</div></div>`;
+  });
+}
+
+function drawMagSky(canvasId, order, absolute){
+  const el=document.getElementById(canvasId);
+  if(!el) return;
+  const W=el.parentElement.clientWidth;
+  const H=110;
+  el.style.height=H+'px';
+  const dpr=window.devicePixelRatio||1;
+  el.width=W*dpr; el.height=H*dpr;
+  const c=el.getContext('2d');
+  c.scale(dpr,dpr);
+  // Sky bg
+  const bg=c.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#000510'); bg.addColorStop(1,'#010820');
+  c.fillStyle=bg; c.fillRect(0,0,W,H);
+  // Place objects evenly across sky
+  const validObjs=order.map(id=>MAG_OBJECTS.find(o=>o.id===id)).filter(o=>o.id!=='candle');
+  const count=validObjs.length;
+  validObjs.forEach((obj,i)=>{
+    const x=(i+0.5)*(W/count);
+    const y=H*0.45+(Math.sin(i*1.3)*H*0.18);
+    // Apparent size = brightness (lower mag = bigger)
+    let mag=absolute?obj.absMag:obj.appMag;
+    if(mag===null) mag=20;
+    // Clamp for display: appMag range -27 to 12, absMag range -22 to 16
+    const minM=absolute?-22:-27, maxM=absolute?16:12;
+    const norm=1-Math.max(0,Math.min(1,(mag-minM)/(maxM-minM)));
+    const r=Math.max(1.5,norm*18);
+    // Glow
+    const grd=c.createRadialGradient(x,y,0,x,y,r*3.5);
+    grd.addColorStop(0,obj.color+'ee');
+    grd.addColorStop(1,obj.color+'00');
+    c.beginPath();c.arc(x,y,r*3.5,0,Math.PI*2);c.fillStyle=grd;c.fill();
+    c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle=obj.color;c.fill();
+    // Label
+    c.font='7px Share Tech Mono,monospace'; c.fillStyle='rgba(180,210,255,0.7)'; c.textAlign='center';
+    c.fillText(obj.name.split(' ')[0],x,y+r*3.5+9);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// LUMINOSITY MODULE
+// ══════════════════════════════════════════════════
+const LUM_STARS=[
+  {name:'Red Dwarf',subname:'Proxima Centauri',emoji:'🔴',color:'#ff4422',temp:3042,lumSun:0.00155,radiusSun:0.15,desc:'Smallest & coolest true stars. Very low luminosity — they burn hydrogen so slowly they last trillions of years.',sliderColor:'#ff6644',baseDistPc:10},
+  {name:'Sun-like Star',subname:'G-type Main Sequence',emoji:'☀️',color:'#ffe87a',temp:5778,lumSun:1.0,radiusSun:1.0,desc:'Medium temperature, medium size. The Sun is our benchmark — 1 solar luminosity by definition.',sliderColor:'#ffd060',baseDistPc:10},
+  {name:'Blue Giant',subname:'B-type Main Sequence',emoji:'💙',color:'#aaddff',temp:20000,lumSun:10000,radiusSun:7,desc:'Hottest & largest main-sequence stars. Thousands of times more luminous than the Sun — but they burn out fast!',sliderColor:'#88ccff',baseDistPc:10},
+];
+let lumDistances=[10,10,10]; // parsecs from Earth (10 = standard absolute magnitude distance)
+
+function buildLumSection(){
+  const container=document.getElementById('starCompare');
+  container.innerHTML='';
+  LUM_STARS.forEach((star,i)=>{
+    const card=document.createElement('div');
+    card.className='lum-star-card';
+    card.innerHTML=`
+      <div class="lum-star-header">
+        <div class="lum-star-emoji">${star.emoji}</div>
+        <div><div class="lum-star-name">${star.name}</div><div class="lum-star-type">${star.subname} &bull; ${star.temp.toLocaleString()} K</div></div>
+      </div>
+      <div class="lum-sim">
+        <div class="lum-sim-label">DISTANCE FROM EARTH</div>
+        <div class="lum-slider-row">
+          <span style="font-size:9px;color:#456;">CLOSE</span>
+          <input type="range" class="lum-slider" id="lumSlider${i}" min="1" max="1000" value="${lumDistances[i]}" style="accent-color:${star.sliderColor}">
+          <span style="font-size:9px;color:#456;">FAR</span>
+        </div>
+        <div class="lum-sky" id="lumSky${i}"></div>
+        <div class="lum-readout">
+          <div><label>DISTANCE: </label><span id="lumDist${i}">${lumDistances[i]} pc</span></div>
+          <div><label>APP. BRIGHTNESS: </label><span id="lumApp${i}"></span></div>
+          <div><label>LUMINOSITY: </label><span id="lumLumVal${i}">${star.lumSun >= 1000 ? (star.lumSun/1000).toFixed(0)+'K' : star.lumSun} L&#9737;</span></div>
+        </div>
+        <div style="font-size:9px;color:#789;margin-top:5px;line-height:1.5;">${star.desc}</div>
+      </div>`;
+    container.appendChild(card);
+    const slider=card.querySelector(`#lumSlider${i}`);
+    slider.addEventListener('input',()=>{lumDistances[i]=parseInt(slider.value);updateLumStar(i,star);});
+    updateLumStar(i,star);
+  });
+}
+
+function updateLumStar(i,star){
+  const dist=lumDistances[i];
+  // Apparent brightness: L / d^2 (relative to L=1 at d=10pc)
+  const appBrightness=star.lumSun/(dist*dist/100); // normalized so at 10pc, brightness=lumSun/1
+  // Convert to apparent magnitude: m = M - 5*log10(d/10) where M = absolute magnitude
+  const absMag=4.83-2.5*Math.log10(Math.max(star.lumSun,1e-9));
+  const appMag=absMag+5*Math.log10(Math.max(dist,0.01)/10);
+  document.getElementById(`lumDist${i}`).textContent=dist+' pc ('+(dist*3.26).toFixed(0)+' ly)';
+  document.getElementById(`lumApp${i}`).textContent='m = '+appMag.toFixed(1);
+  // Draw sky dot
+  const sky=document.getElementById(`lumSky${i}`);
+  if(!sky) return;
+  const skyW=sky.clientWidth||240, skyH=70;
+  // Apparent radius (bigger = brighter): r proportional to appBrightness^0.5 capped
+  const maxR=28, minR=0.8;
+  const rawR=Math.sqrt(appBrightness)*6;
+  const r=Math.max(minR,Math.min(maxR,rawR));
+  sky.style.position='relative';
+  sky.style.background='#000';
+  // Draw on inline canvas inside sky div
+  let cvs=sky.querySelector('canvas');
+  if(!cvs){cvs=document.createElement('canvas');cvs.style.cssText='position:absolute;inset:0;width:100%;height:100%;';sky.appendChild(cvs);}
+  cvs.width=skyW*(window.devicePixelRatio||1);
+  cvs.height=skyH*(window.devicePixelRatio||1);
+  cvs.style.width=skyW+'px'; cvs.style.height=skyH+'px';
+  const c=cvs.getContext('2d');
+  c.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
+  c.clearRect(0,0,skyW,skyH);
+  const cx=skyW/2, cy=skyH/2;
+  const grd=c.createRadialGradient(cx,cy,0,cx,cy,r*3);
+  grd.addColorStop(0,star.color+'ff');
+  grd.addColorStop(0.4,star.color+'99');
+  grd.addColorStop(1,star.color+'00');
+  c.beginPath();c.arc(cx,cy,r*3,0,Math.PI*2);c.fillStyle=grd;c.fill();
+  c.beginPath();c.arc(cx,cy,Math.max(0.5,r),0,Math.PI*2);c.fillStyle=star.color;c.fill();
+  // Label
+  c.font='9px Share Tech Mono,monospace';c.fillStyle='rgba(180,210,255,0.6)';c.textAlign='center';
+  c.fillText('m = '+appMag.toFixed(1),cx,skyH-6);
+}
+
+// ══════════════════════════════════════════════════
+// EM SPECTRUM MODULE
+// ══════════════════════════════════════════════════
+const EM_BANDS=[
+  {id:'gamma',   name:'Gamma Ray',  short:'&#947;',  color:'#cc00ff', gradient:'linear-gradient(135deg,#7700cc,#cc00ff)',
+   icon:'&#9762;', wavelength:'< 0.01 nm', freq:'> 30 EHz', energy:'124 keV+', speed:'c',
+   penetration:'Stopped by dense materials; very few cm of lead needed',
+   desc:'Gamma rays are the most energetic form of electromagnetic radiation. They are produced by nuclear reactions, radioactive decay, supernovae, neutron star mergers, and black hole jets. A single gamma-ray photon carries enough energy to ionize atoms and damage DNA.',
+   astro:'Gamma-ray astronomy reveals the most violent events in the universe: gamma-ray bursts (the brightest explosions since the Big Bang), pulsar jets, and annihilation radiation from matter-antimatter collisions near black holes.',
+   telescope:'Fermi Gamma-ray Space Telescope, INTEGRAL, Compton Gamma Ray Observatory',
+   atmosphere:'Completely absorbed by atmosphere — all gamma telescopes must be in space',
+   uses:['Nuclear medicine (PET scans detect gamma rays from radioactive tracers)','Radiation therapy for cancer (gamma knife surgery)','Food irradiation to kill bacteria','Sterilization of medical equipment','Detecting nuclear material at borders']},
+
+  {id:'xray',    name:'X-Ray',      short:'X',      color:'#4488ff', gradient:'linear-gradient(135deg,#1144aa,#4488ff)',
+   icon:'&#128248;', wavelength:'0.01 – 10 nm', freq:'30 PHz – 30 EHz', energy:'124 eV – 124 keV', speed:'c',
+   penetration:'Passes through soft tissue; stopped by bone or metal',
+   desc:'X-rays penetrate soft materials but are absorbed by denser ones. They are emitted by gas heated to millions of degrees — found around black holes, neutron stars, and galaxy clusters. Discovered by Wilhelm Röntgen in 1895.',
+   astro:'X-ray astronomy reveals the hot universe: accretion disks around black holes glowing at millions of degrees, jets from active galactic nuclei, colliding galaxy clusters, and the remnants of supernovae. The Milky Way\'s center is extremely bright in X-rays.',
+   telescope:'Chandra X-ray Observatory, XMM-Newton, eROSITA',
+   atmosphere:'Absorbed by atmosphere — X-ray telescopes must be in space',
+   uses:['Medical imaging (broken bones, chest X-rays)','Airport security scanners','Materials inspection in manufacturing','X-ray crystallography to determine molecular structure','Dental imaging']},
+
+  {id:'uv',      name:'Ultraviolet', short:'UV',     color:'#8844ff', gradient:'linear-gradient(135deg,#5522cc,#8844ff)',
+   icon:'&#9728;', wavelength:'10 – 400 nm', freq:'750 THz – 30 PHz', energy:'3 – 124 eV', speed:'c',
+   penetration:'Blocked by ozone layer; causes sunburn and DNA damage',
+   desc:'Ultraviolet radiation sits just beyond the violet end of visible light. The Sun emits substantial UV, which Earth\'s ozone layer largely absorbs. UV is energetic enough to break chemical bonds and damage DNA, making sunscreen essential.',
+   astro:'UV astronomy reveals hot young stars, active galactic nuclei, and the interstellar medium. The Hubble Space Telescope observes in UV. UV images of galaxies highlight regions of intense star formation — young massive O and B stars shine brilliantly in UV.',
+   telescope:'Hubble Space Telescope (UV mode), GALEX, Swift UVOT',
+   atmosphere:'Most UV absorbed by ozone layer — UV telescopes need to be above the atmosphere',
+   uses:['Sterilization (UV-C kills bacteria and viruses)','Black lights (detecting counterfeit currency, scorpions)','Tanning beds (UV-A/B)','Vitamin D production in skin','Forensic investigation (revealing fingerprints and stains)']},
+
+  {id:'visible', name:'Visible Light', short:'VIS',  color:'#ffffff', gradient:'linear-gradient(90deg,#ff4444,#ff8800,#ffee00,#44ff44,#4488ff,#8844ff)',
+   icon:'&#128065;', wavelength:'380 – 700 nm', freq:'430 – 790 THz', energy:'1.8 – 3.1 eV', speed:'c',
+   penetration:'Passes through air and glass; reflected or absorbed by most surfaces',
+   desc:'Visible light is the narrow band of the EM spectrum that human eyes can detect. It ranges from violet (~380 nm) to red (~700 nm). White light is a mixture of all visible wavelengths. The colors of stars correspond directly to their surface temperatures.',
+   astro:'Traditional optical astronomy has mapped the sky for millennia. Telescopes from Galileo to the VLT reveal planets, stars, nebulae, and galaxies. The color of a star directly indicates its temperature: blue = hot, red = cool. This is the basis of stellar spectroscopy.',
+   telescope:'Hubble Space Telescope (optical), James Webb (near-IR/optical), Very Large Telescope, any ground-based optical telescope',
+   atmosphere:'Mostly transparent to visible light — ground-based optical telescopes work fine',
+   uses:['Human vision','Photography','Optical microscopes','Fiber optic communication (near-visible)','Laser technology']},
+
+  {id:'ir',      name:'Infrared',    short:'IR',     color:'#ff6600', gradient:'linear-gradient(135deg,#992200,#ff6600)',
+   icon:'&#9832;', wavelength:'700 nm – 1 mm', freq:'300 GHz – 430 THz', energy:'1.2 meV – 1.8 eV', speed:'c',
+   penetration:'Felt as heat; penetrates dust clouds that block visible light',
+   desc:'Infrared radiation is emitted by any object with temperature above absolute zero. We feel it as heat from the Sun, a fire, or a warm body. Infrared cameras can image heat sources in complete darkness. Crucially, IR penetrates dust clouds that block visible light.',
+   astro:'Infrared astronomy penetrates the dust lanes of the Milky Way to reveal the galactic center, star-forming regions hidden in nebulae, cool brown dwarfs, debris disks around stars, and the earliest galaxies redshifted into the infrared. JWST is primarily an infrared telescope.',
+   telescope:'James Webb Space Telescope, Spitzer Space Telescope, Herschel Space Observatory, WISE',
+   atmosphere:'Mostly absorbed by water vapor and CO2 — IR telescopes prefer space or high-altitude dry sites',
+   uses:['Night vision cameras and thermal imaging','Remote controls (TV, etc.)','Heat-seeking missiles','Infrared spectroscopy for chemical analysis','Greenhouse gas detection']},
+
+  {id:'micro',   name:'Microwave',   short:'&#956;W', color:'#ff9900', gradient:'linear-gradient(135deg,#994400,#ff9900)',
+   icon:'&#128243;', wavelength:'1 mm – 1 m', freq:'300 MHz – 300 GHz', energy:'1.2 &#956;eV – 1.2 meV', speed:'c',
+   penetration:'Penetrates clouds; absorbed by water molecules (cooking)',
+   desc:'Microwaves bridge the gap between infrared and radio waves. Water molecules absorb microwave energy efficiently, which is why microwave ovens work. Microwaves also penetrate clouds, making them ideal for radar and satellite communication.',
+   astro:'The Cosmic Microwave Background (CMB) is microwave radiation left over from the Big Bang, 380,000 years after creation. It is the oldest light we can see — a perfect blackbody spectrum at 2.725 K. Mapping the CMB (by WMAP and Planck) revealed the large-scale structure of the universe.',
+   telescope:'Planck Space Observatory, WMAP, ALMA (submillimeter), South Pole Telescope',
+   atmosphere:'Partially transparent — radio telescopes can work on the ground',
+   uses:['Microwave ovens (heating food)','Radar (weather, air traffic control)','Mobile phone networks (5G)','WiFi and Bluetooth','Satellite communication']},
+
+  {id:'radio',   name:'Radio Wave',  short:'R',      color:'#cc4400', gradient:'linear-gradient(135deg,#882200,#cc4400)',
+   icon:'&#128251;', wavelength:'> 1 m', freq:'< 300 MHz', energy:'< 1.2 &#956;eV', speed:'c',
+   penetration:'Passes through walls and most matter; longest wavelength, lowest energy',
+   desc:'Radio waves are the longest wavelength EM waves. They carry the least energy per photon but are produced in enormous quantities by charged particles spiraling in magnetic fields (synchrotron radiation), atomic transitions, and pulsars. They pass through most matter easily.',
+   astro:'Radio astronomy revealed pulsars, quasars, the cosmic microwave background, hydrogen gas in the Milky Way (21-cm line), and jets from active galaxies. The Very Large Array and Event Horizon Telescope (which imaged a black hole) are radio observatories. SETI searches for artificial radio signals.',
+   telescope:'Very Large Array (VLA), Event Horizon Telescope, Arecibo (historic), FAST, MeerKAT',
+   atmosphere:'Transparent to radio waves — radio telescopes work perfectly on the ground',
+   uses:['AM and FM radio broadcasting','Television transmission','Mobile phones and satellites','GPS navigation','MRI machines in hospitals (radio waves + magnetic field)']}
+];
+
+const EM_ASTRO_OBJECTS=[
+  {name:'Crab Nebula',emoji:'&#128165;',
+   desc:'Remnant of a supernova seen in 1054 CE. Looks completely different in each wavelength band.',
+   bands:{radio:'Radio: Shows synchrotron radiation from electrons spiraling in the pulsar\'s magnetic field — reveals the large-scale jet and torus structure.',
+          ir:'Infrared: Reveals warm dust and filaments heated by the pulsar wind. Shows the nebula\'s extent beyond what\'s visible optically.',
+          visible:'Visible: Glowing gas filaments of hydrogen and oxygen, illuminated by the central Crab Pulsar rotating 30 times per second.',
+          uv:'UV: Highlights the hottest gas and shows where the pulsar wind shocks the surrounding material.',
+          xray:'X-Ray: The Chandra image reveals the pulsar, jets, and wind ring in stunning detail — X-rays come from ultra-hot gas.',
+          gamma:'Gamma: The Crab Pulsar is a bright gamma-ray source, flaring unexpectedly and helping calibrate gamma telescopes.'}},
+  {name:'Milky Way Center',emoji:'&#127756;',
+   desc:'Our galactic center is hidden behind 26,000 light-years of dust. Only non-visible wavelengths can see through.',
+   bands:{radio:'Radio: The 21-cm hydrogen line maps neutral gas across the entire galaxy. Radio reveals Sgr A*, the 4-million solar mass black hole at the center.',
+          ir:'Infrared: Infrared cuts through the dust to reveal dense star clusters, stellar nurseries, and gas clouds near the black hole.',
+          visible:'Visible: Almost completely blocked by dust — you cannot see the galactic center in visible light from Earth.',
+          xray:'X-Ray: Chandra revealed thousands of X-ray sources near the center, hot gas, and occasional flares from Sgr A* when it swallows material.',
+          gamma:'Gamma: Fermi revealed enormous gamma-ray "bubbles" extending 25,000 light-years above and below the galactic plane — origin still debated.'}},
+  {name:'Andromeda Galaxy',emoji:'&#127756;',
+   desc:'Our nearest large galaxy at 2.5 million light-years. JWST revealed it in unprecedented detail.',
+   bands:{radio:'Radio: Neutral hydrogen maps reveal Andromeda\'s full disk, extending far beyond visible light, and its interaction with satellite galaxies.',
+          ir:'Infrared: Spitzer and WISE showed rings of warm dust and star-forming regions invisible in optical light.',
+          visible:'Visible: The classic spiral galaxy image — star-filled disk, dust lanes, and bright bulge.',
+          uv:'UV: GALEX showed young hot stars and active star-forming regions in vivid blue spiraling arms.',
+          xray:'X-Ray: Reveals hundreds of X-ray binaries (neutron stars and black holes eating companion stars) and hot diffuse gas.'}},
+];
+
+const EM_QUIZ=[
+  {q:'Which type of EM radiation has the shortest wavelength?',choices:['Radio waves','Visible light','X-rays','Gamma rays'],ans:3,exp:'Gamma rays have the shortest wavelength (< 0.01 nm) and therefore the highest frequency and energy of all EM radiation.'},
+  {q:'Why can\'t we see infrared light from stars with our naked eyes?',choices:['Infrared is too dim','Our eyes only detect wavelengths 380–700 nm','Infrared is blocked by the atmosphere','Infrared travels slower than visible light'],ans:1,exp:'Human photoreceptors (cones and rods) are only sensitive to wavelengths between roughly 380 nm (violet) and 700 nm (red). Infrared falls just outside this range at 700 nm–1 mm.'},
+  {q:'The Cosmic Microwave Background radiation is observed in which part of the EM spectrum?',choices:['Visible light','X-rays','Microwaves','Radio waves'],ans:2,exp:'The CMB is thermal radiation left over from the Big Bang. It has been redshifted by cosmic expansion to microwave wavelengths with a temperature of about 2.725 K.'},
+  {q:'Why does the James Webb Space Telescope primarily observe in infrared?',choices:['Infrared is brighter than visible light','The most distant galaxies are redshifted into infrared','Infrared passes through the telescope mirror better','Visible light is too energetic for JWST\'s detectors'],ans:1,exp:'Light from the earliest galaxies (13+ billion light-years away) is redshifted by cosmic expansion. Visible light emitted when the universe was young arrives at Earth as infrared, so JWST\'s infrared sensitivity lets it see the most distant objects.'},
+  {q:'Which telescopes MUST be placed in space rather than on the ground?',choices:['Only radio telescopes','Only optical telescopes','X-ray and gamma-ray telescopes','All telescopes must be in space'],ans:2,exp:'Earth\'s atmosphere absorbs X-rays and gamma rays completely. Radio waves and most visible light can reach the ground, but X-ray/gamma-ray observatories like Chandra and Fermi must orbit above the atmosphere.'},
+  {q:'A star appears blue. What does this tell you about it?',choices:['It is cool and dim','It is very old','It has a high surface temperature (~20,000+ K)','It is smaller than the Sun'],ans:2,exp:'Hotter objects emit more of their light at shorter wavelengths. A blue star has a surface temperature of roughly 10,000–50,000 K, compared to the Sun\'s 5,778 K (yellow-white) or a red dwarf\'s ~3,000 K.'},
+  {q:'Radio waves and gamma rays are both electromagnetic radiation. What do they have in common?',choices:['Same wavelength','Same energy per photon','Both travel at the speed of light','Same frequency'],ans:2,exp:'All electromagnetic waves — from radio to gamma — travel at exactly c = 299,792,458 m/s in a vacuum. This is a fundamental property of EM radiation, regardless of wavelength or frequency.'},
+  {q:'What does synchrotron radiation have to do with astronomy?',choices:['It powers solar panels on satellites','It is produced by electrons spiraling in magnetic fields and seen in radio/X-ray','It is visible light from very hot stars','It is gamma radiation from supernovae'],ans:1,exp:'When charged particles (especially electrons) accelerate around magnetic field lines, they emit synchrotron radiation across radio to X-ray wavelengths. It is seen in pulsar nebulae, galaxy jets, and supernova remnants.'},
+  {q:'Which part of the EM spectrum penetrates dust clouds best, allowing us to see the center of the Milky Way?',choices:['Visible light','Ultraviolet','Infrared and radio','X-rays'],ans:2,exp:'Dust grains scatter and absorb visible and UV light but are much more transparent to infrared and radio waves. Infrared telescopes like Spitzer and JWST, and radio telescopes, can peer through the 26,000 light-years of dust between us and the galactic center.'},
+  {q:'The relationship E = hf means that as frequency increases, photon energy:',choices:['Decreases proportionally','Stays the same','Increases proportionally','Doubles every octave'],ans:2,exp:'E = hf is Planck\'s equation: energy (E) equals Planck\'s constant (h = 6.626 × 10⁻³⁴ J·s) times frequency (f). A direct proportion — doubling frequency doubles photon energy. This is why gamma rays (highest frequency) are the most energetic and dangerous.'},
+];
+
+let emInitialized=false, currentBandIdx=3, emWaveAnim=null;
+let emQuizAnswered=[], emQuizScore=0;
+
+function launchEM(){
+  const name=document.getElementById('studentName').value.trim();
+  if(!name){alert('Please enter your name first!');return;}
+  if(!studentPeriod){alert('Please select your class period!');return;}
+  studentName=name;
+  showScreen('emScreen');
+  if(!emInitialized){initEM();}
+  showDirections({
+    icon:'&#127752;',
+    title:'EM SPECTRUM',
+    subtitle:'ELECTROMAGNETIC RADIATION',
+    steps:[
+      'In the <strong>Overview</strong> tab, read about the full spectrum and tap any band on the colored bar to jump to it.',
+      'In <strong>Explore</strong>, tap each colored band to see its wavelength, energy, wave animation, and properties.',
+      'In <strong>Astronomy</strong>, discover how different telescopes reveal hidden details of famous objects.',
+      'In <strong>Quiz</strong>, test your understanding with 10 questions about the EM spectrum.'
+    ]
+  }, null);
+}
+
+function initEM(){
+  emInitialized=true;
+  emQuizAnswered=new Array(EM_QUIZ.length).fill(null);
+  emQuizScore=0;
+  buildEMOverviewBar();
+  buildEMBandBar();
+  buildEMCompareGrid();
+  showEMBand(3); // start on visible
+  buildEMAstroCards();
+  buildEMQuiz();
+}
+
+function showEMTab(tab){
+  ['overview','band','astro','quiz'].forEach(t=>{
+    document.getElementById('emPanel-'+t).classList.toggle('show', t===tab);
+    const el=document.getElementById('emtab-'+t);
+    el.classList.toggle('active', t===tab);
+    el.style.color=t===tab ? EM_BANDS[currentBandIdx].color : '#89a';
+    el.style.borderBottomColor=t===tab ? EM_BANDS[currentBandIdx].color : 'transparent';
+  });
+  if(tab==='band') drawEMWave();
+}
+
+function buildEMBarHTML(clickFn){
+  return EM_BANDS.map((b,i)=>`<div class="em-seg" style="background:${b.gradient}" onclick="${clickFn}(${i})"><span class="em-seg-label">${b.short}</span></div>`).join('');
+}
+
+function buildEMOverviewBar(){
+  const wrap=document.getElementById('overviewBar');
+  if(!wrap) return;
+  wrap.innerHTML=`<div class="em-bar">${buildEMBarHTML('jumpToEMBand')}</div>`;
+}
+
+function buildEMBandBar(){
+  const wrap=document.getElementById('bandBar');
+  if(!wrap) return;
+  wrap.innerHTML=`<div class="em-bar">${buildEMBarHTML('showEMBand')}</div>`;
+}
+
+function jumpToEMBand(i){
+  showEMTab('band');
+  showEMBand(i);
+}
+
+function buildEMCompareGrid(){
+  const grid=document.getElementById('emCompareGrid');
+  if(!grid) return;
+  grid.innerHTML=EM_BANDS.map(b=>`
+    <div class="em-compare-card" style="background:${b.gradient};border:1px solid rgba(255,255,255,0.1);" onclick="jumpToEMBand(${EM_BANDS.indexOf(b)})">
+      <div class="ecc-name">${b.name}</div>
+      <div class="ecc-wave">${b.wavelength}</div>
+      <div class="ecc-energy" style="font-size:8px">${b.energy}</div>
+    </div>`).join('');
+}
+
+function showEMBand(i){
+  currentBandIdx=i;
+  const b=EM_BANDS[i];
+  // Highlight selected seg in both bars
+  document.querySelectorAll('.em-seg').forEach((s,si)=>{
+    const bandI=si % EM_BANDS.length;
+    s.classList.toggle('sel', bandI===i);
+  });
+  // Build band card
+  const card=document.getElementById('emBandCard');
+  if(!card) return;
+  card.style.border=`1px solid ${b.color}44`;
+  card.innerHTML=`
+    <div class="em-band-header" style="background:${b.gradient}22;border-bottom:1px solid ${b.color}33;">
+      <div class="em-band-icon">${b.icon}</div>
+      <div><div class="em-band-name" style="color:${b.color==='#ffffff'?'#eee':b.color}">${b.name}</div><div class="em-band-range">${b.wavelength}</div></div>
+    </div>
+    <div class="em-band-body">
+      <div class="em-fact"><div class="em-fact-label">Wavelength</div><div class="em-fact-value">${b.wavelength}</div></div>
+      <div class="em-fact"><div class="em-fact-label">Frequency</div><div class="em-fact-value">${b.freq}</div></div>
+      <div class="em-fact"><div class="em-fact-label">Energy</div><div class="em-fact-value">${b.energy}</div></div>
+      <div class="em-fact"><div class="em-fact-label">Speed</div><div class="em-fact-value">299,792 km/s</div></div>
+    </div>
+    <div class="em-band-desc">${b.desc}</div>
+    <div class="em-band-astro"><strong>IN ASTRONOMY:</strong> ${b.astro}<br><br><strong>Telescopes:</strong> ${b.telescope}<br><strong>Atmosphere:</strong> ${b.atmosphere}</div>
+    <div class="em-band-uses"><div class="em-uses-title">&#9733; EVERYDAY USES</div>${b.uses.map(u=>`<div class="em-use-item"><div class="em-use-dot" style="background:${b.color}"></div>${u}</div>`).join('')}</div>`;
+  drawEMWave();
+  // Update tab colors
+  document.querySelectorAll('.em-tab').forEach(t=>{if(t.classList.contains('active'))t.style.color=b.color;t.style.borderBottomColor=t.classList.contains('active')?b.color:'transparent';});
+}
+
+let emWaveCanvas=null, emWaveCtx=null, emWaveFrame=0;
+function drawEMWave(){
+  if(!document.getElementById('emPanel-band').classList.contains('show')) return;
+  const cvs=document.getElementById('emWaveCanvas');
+  if(!cvs) return;
+  emWaveCanvas=cvs;
+  const W=cvs.parentElement ? cvs.parentElement.clientWidth : 300;
+  const H=60;
+  const dpr=window.devicePixelRatio||1;
+  cvs.width=W*dpr; cvs.height=H*dpr;
+  cvs.style.width=W+'px'; cvs.style.height=H+'px';
+  emWaveCtx=cvs.getContext('2d');
+  emWaveCtx.scale(dpr,dpr);
+  if(emWaveAnim) cancelAnimationFrame(emWaveAnim);
+  animateEMWave(W,H);
+}
+
+function animateEMWave(W,H){
+  const b=EM_BANDS[currentBandIdx];
+  // Frequency index 0=gamma(many cycles) to 6=radio(few cycles)
+  const cycles=[14,10,7,4,2.5,1.5,0.8][currentBandIdx];
+  const speed=[0.25,0.2,0.18,0.15,0.12,0.1,0.08][currentBandIdx];
+  const amplitude=[8,10,12,14,14,13,11][currentBandIdx];
+  emWaveFrame+=speed;
+  const c=emWaveCtx;
+  c.clearRect(0,0,W,H);
+  // Background
+  c.fillStyle='#010310'; c.fillRect(0,0,W,H);
+  // Draw wave
+  c.beginPath();
+  c.strokeStyle=b.color==='#ffffff'?'rgba(255,255,255,0.9)':b.color;
+  c.lineWidth=2;
+  c.shadowColor=b.color==='#ffffff'?'rgba(200,220,255,0.6)':b.color;
+  c.shadowBlur=6;
+  for(let x=0;x<=W;x++){
+    const y=H/2+Math.sin((x/W)*cycles*Math.PI*2+emWaveFrame)*amplitude;
+    if(x===0)c.moveTo(x,y); else c.lineTo(x,y);
+  }
+  c.stroke();
+  c.shadowBlur=0;
+  // Labels
+  c.font='8px Share Tech Mono,monospace';
+  c.fillStyle='rgba(180,210,255,0.6)';
+  c.textAlign='left'; c.fillText(b.name,6,12);
+  c.textAlign='right'; c.fillText(b.wavelength,W-6,12);
+  emWaveAnim=requestAnimationFrame(()=>animateEMWave(W,H));
+}
+
+function buildEMAstroCards(){
+  const cont=document.getElementById('emAstroCards');
+  if(!cont) return;
+  cont.innerHTML=EM_ASTRO_OBJECTS.map(obj=>{
+    const bands=Object.keys(obj.bands);
+    return `<div style="background:rgba(8,16,40,0.9);border:1px solid rgba(100,180,255,0.15);border-radius:12px;overflow:hidden;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:1px solid rgba(100,180,255,0.1);">
+        <div style="font-size:24px;">${obj.emoji}</div>
+        <div><div style="font-family:Orbitron,monospace;font-size:11px;font-weight:700;color:#fff;">${obj.name}</div>
+        <div style="font-size:9px;color:#567;margin-top:2px;">${obj.desc}</div></div>
+      </div>
+      <div style="padding:10px 14px 12px;display:flex;flex-direction:column;gap:6px;">
+        ${bands.map(band=>{
+          const bdata=EM_BANDS.find(b=>b.id===band)||{color:'#aaa',name:band};
+          return `<div style="background:rgba(255,255,255,0.03);border-left:3px solid ${bdata.color};border-radius:4px;padding:6px 10px;">
+            <div style="font-size:8px;color:${bdata.color};font-family:Orbitron,monospace;letter-spacing:1px;margin-bottom:2px;">${bdata.name.toUpperCase()}</div>
+            <div style="font-size:9px;color:#9bc;line-height:1.5;">${obj.bands[band]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildEMQuiz(){
+  const cont=document.getElementById('emQuizContainer');
+  if(!cont) return;
+  cont.innerHTML=EM_QUIZ.map((q,qi)=>`
+    <div class="em-quiz-q" id="emq-${qi}">
+      <p><strong style="color:#ffe566;font-family:Orbitron,monospace;font-size:9px;">Q${qi+1}.</strong> ${q.q}</p>
+      <div class="em-quiz-choices">
+        ${q.choices.map((ch,ci)=>`<button class="em-choice" id="emqc-${qi}-${ci}" onclick="answerEMQuiz(${qi},${ci})">${ch}</button>`).join('')}
+      </div>
+      <div class="em-quiz-explain" id="emqe-${qi}"></div>
+    </div>`).join('');
+}
+
+function answerEMQuiz(qi,ci){
+  if(emQuizAnswered[qi]!==null) return;
+  emQuizAnswered[qi]=ci;
+  const q=EM_QUIZ[qi];
+  const correct=ci===q.ans;
+  if(correct) emQuizScore++;
+  // Style choices
+  for(let i=0;i<q.choices.length;i++){
+    const btn=document.getElementById(`emqc-${qi}-${i}`);
+    btn.classList.add('disabled');
+    if(i===q.ans) btn.classList.add('correct');
+    else if(i===ci&&!correct) btn.classList.add('wrong');
+  }
+  // Show explanation
+  const exp=document.getElementById(`emqe-${qi}`);
+  exp.textContent=(correct?'✓ Correct! ':'✗ Not quite. ')+q.exp;
+  exp.className='em-quiz-explain show '+(correct?'right-exp':'wrong-exp');
+  // Update score
+  const answered=emQuizAnswered.filter(a=>a!==null).length;
+  document.getElementById('emQuizScore').textContent=`SCORE: ${emQuizScore} / ${answered}`;
+}
+
+function resetEMQuiz(){
+  emQuizAnswered=new Array(EM_QUIZ.length).fill(null);
+  emQuizScore=0;
+  document.getElementById('emQuizScore').textContent='SCORE: 0 / 0';
+  buildEMQuiz();
+}
+
+function cheatCompleteEM(){
+  // Auto-answer all quiz questions correctly
+  EM_QUIZ.forEach((_,qi)=>{if(emQuizAnswered[qi]===null) answerEMQuiz(qi,EM_QUIZ[qi].ans);});
+  showEMTab('quiz');
+}
+
+// ── STARFIELD ──
+(function(){
+  const sf=document.getElementById('starfield');
+  sf.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:0;background:#020510;';
+  let h='';
+  for(let i=0;i<200;i++){const x=Math.random()*100,y=Math.random()*100,s=Math.random()*1.7+0.2,o=Math.random()*0.55+0.1,d=(2+Math.random()*5).toFixed(1);h+=`<div style="position:absolute;left:${x}%;top:${y}%;width:${s}px;height:${s}px;border-radius:50%;background:#fff;opacity:${o};animation:tw ${d}s ${(Math.random()*5).toFixed(1)}s infinite alternate"></div>`;}
+  sf.innerHTML=h;
+})();
+
+window.addEventListener('load',()=>{initJoyRefs();});
+window.addEventListener('resize',()=>{if(hrInitialized)setupCanvas();});
+</script>
+
+</body>
+</html>
