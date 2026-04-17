@@ -327,7 +327,13 @@ body{background:var(--bg);color:#cde;font-family:'Share Tech Mono',monospace;min
 .em-quiz-explain.right-exp{background:rgba(60,220,120,0.06);border:1px solid rgba(60,220,120,0.2);color:#6fa;}
 .em-quiz-explain.wrong-exp{background:rgba(255,80,60,0.06);border:1px solid rgba(255,80,60,0.2);color:#f98;}
 .em-quiz-score{font-family:‘Orbitron’,monospace;font-size:11px;color:#4af;text-align:center;padding:10px;letter-spacing:1px;}
-.em-quiz-reset{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:‘Orbitron’,monospace;font-size:10px;padding:10px;cursor:pointer;letter-spacing:1px;margin-top:6px;}
+.em-quiz-reset{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:’Orbitron’,monospace;font-size:10px;padding:10px;cursor:pointer;letter-spacing:1px;margin-top:6px;}
+.em-quiz-complete{position:fixed;inset:0;z-index:400;background:rgba(0,4,18,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;padding:30px;opacity:0;pointer-events:none;transition:opacity 0.5s;}
+.em-quiz-complete.show{opacity:1;pointer-events:all;}
+.em-quiz-complete h2{font-family:’Orbitron’,monospace;font-size:20px;font-weight:900;color:#ffe566;letter-spacing:3px;}
+.em-quiz-complete .qc-score{font-family:’Orbitron’,monospace;font-size:36px;color:#4af;letter-spacing:2px;}
+.em-quiz-complete .qc-student{font-size:13px;color:#cde;letter-spacing:1px;}
+.em-quiz-complete .qc-msg{font-size:12px;color:#89a;max-width:280px;line-height:1.6;}
 </style>
 
 </head>
@@ -639,6 +645,16 @@ body{background:var(--bg);color:#cde;font-family:'Share Tech Mono',monospace;min
   <div class="em-quiz-score" id="emQuizScore">SCORE: 0 / 0</div>
   <div id="emQuizContainer"></div>
   <button class="em-quiz-reset" onclick="resetEMQuiz()">&#8635; RESET QUIZ</button>
+</div>
+
+<!-- QUIZ COMPLETION OVERLAY -->
+<div class="em-quiz-complete" id="emQuizComplete">
+  <div style="font-size:52px">&#11088;</div>
+  <h2>QUIZ COMPLETED!</h2>
+  <div class="qc-score" id="qcScore">0 / 0</div>
+  <div class="qc-student" id="qcStudent"></div>
+  <div class="qc-msg">Please &ldquo;screen shot&rdquo; the image and send it to your teacher in Canvas.</div>
+  <button class="em-quiz-reset" style="margin-top:10px;width:auto;padding:10px 24px;" onclick="resetEMQuiz()">&#8635; RESET QUIZ</button>
 </div>
 ```
 
@@ -1836,9 +1852,17 @@ function answerEMQuiz(qi,ci){
   // Update score
   const answered=emQuizAnswered.filter(a=>a!==null).length;
   document.getElementById('emQuizScore').textContent=`SCORE: ${emQuizScore} / ${answered}`;
+  if(answered===EM_QUIZ.length) showEMQuizComplete();
+}
+
+function showEMQuizComplete(){
+  document.getElementById('qcScore').textContent=`${emQuizScore} / ${EM_QUIZ.length}`;
+  document.getElementById('qcStudent').textContent=studentName+' · Period '+studentPeriod;
+  setTimeout(()=>document.getElementById('emQuizComplete').classList.add('show'),600);
 }
 
 function resetEMQuiz(){
+  document.getElementById('emQuizComplete').classList.remove('show');
   emQuizAnswered=new Array(EM_QUIZ.length).fill(null);
   emQuizScore=0;
   document.getElementById('emQuizScore').textContent='SCORE: 0 / 0';
