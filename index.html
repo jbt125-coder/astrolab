@@ -327,7 +327,13 @@ body{background:var(--bg);color:#cde;font-family:'Share Tech Mono',monospace;min
 .em-quiz-explain.right-exp{background:rgba(60,220,120,0.06);border:1px solid rgba(60,220,120,0.2);color:#6fa;}
 .em-quiz-explain.wrong-exp{background:rgba(255,80,60,0.06);border:1px solid rgba(255,80,60,0.2);color:#f98;}
 .em-quiz-score{font-family:‘Orbitron’,monospace;font-size:11px;color:#4af;text-align:center;padding:10px;letter-spacing:1px;}
-.em-quiz-reset{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:‘Orbitron’,monospace;font-size:10px;padding:10px;cursor:pointer;letter-spacing:1px;margin-top:6px;}
+.em-quiz-reset{width:100%;background:transparent;border:1px solid rgba(100,180,255,0.3);border-radius:8px;color:#7ab;font-family:’Orbitron’,monospace;font-size:10px;padding:10px;cursor:pointer;letter-spacing:1px;margin-top:6px;}
+.em-quiz-complete{position:fixed;inset:0;z-index:400;background:rgba(0,4,18,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;padding:30px;opacity:0;pointer-events:none;transition:opacity 0.5s;}
+.em-quiz-complete.show{opacity:1;pointer-events:all;}
+.em-quiz-complete h2{font-family:’Orbitron’,monospace;font-size:20px;font-weight:900;color:#ffe566;letter-spacing:3px;}
+.em-quiz-complete .qc-score{font-family:’Orbitron’,monospace;font-size:36px;color:#4af;letter-spacing:2px;}
+.em-quiz-complete .qc-student{font-size:13px;color:#cde;letter-spacing:1px;}
+.em-quiz-complete .qc-msg{font-size:12px;color:#89a;max-width:280px;line-height:1.6;}
 </style>
 
 </head>
@@ -639,6 +645,16 @@ body{background:var(--bg);color:#cde;font-family:'Share Tech Mono',monospace;min
   <div class="em-quiz-score" id="emQuizScore">SCORE: 0 / 0</div>
   <div id="emQuizContainer"></div>
   <button class="em-quiz-reset" onclick="resetEMQuiz()">&#8635; RESET QUIZ</button>
+</div>
+
+<!-- QUIZ COMPLETION OVERLAY -->
+<div class="em-quiz-complete" id="emQuizComplete">
+  <div style="font-size:52px">&#11088;</div>
+  <h2>QUIZ COMPLETED!</h2>
+  <div class="qc-score" id="qcScore">0 / 0</div>
+  <div class="qc-student" id="qcStudent"></div>
+  <div class="qc-msg">Please &ldquo;screen shot&rdquo; the image and send it to your teacher in Canvas.</div>
+  <button class="em-quiz-reset" style="margin-top:10px;width:auto;padding:10px 24px;" onclick="resetEMQuiz()">&#8635; RESET QUIZ</button>
 </div>
 ```
 
@@ -1610,6 +1626,7 @@ const EM_ASTRO_OBJECTS=[
 ];
 
 const EM_QUIZ=[
+  // Original 10 (harder)
   {q:'Which type of EM radiation has the shortest wavelength?',choices:['Radio waves','Visible light','X-rays','Gamma rays'],ans:3,exp:'Gamma rays have the shortest wavelength (< 0.01 nm) and therefore the highest frequency and energy of all EM radiation.'},
   {q:'Why can\'t we see infrared light from stars with our naked eyes?',choices:['Infrared is too dim','Our eyes only detect wavelengths 380–700 nm','Infrared is blocked by the atmosphere','Infrared travels slower than visible light'],ans:1,exp:'Human photoreceptors (cones and rods) are only sensitive to wavelengths between roughly 380 nm (violet) and 700 nm (red). Infrared falls just outside this range at 700 nm–1 mm.'},
   {q:'The Cosmic Microwave Background radiation is observed in which part of the EM spectrum?',choices:['Visible light','X-rays','Microwaves','Radio waves'],ans:2,exp:'The CMB is thermal radiation left over from the Big Bang. It has been redshifted by cosmic expansion to microwave wavelengths with a temperature of about 2.725 K.'},
@@ -1620,10 +1637,28 @@ const EM_QUIZ=[
   {q:'What does synchrotron radiation have to do with astronomy?',choices:['It powers solar panels on satellites','It is produced by electrons spiraling in magnetic fields and seen in radio/X-ray','It is visible light from very hot stars','It is gamma radiation from supernovae'],ans:1,exp:'When charged particles (especially electrons) accelerate around magnetic field lines, they emit synchrotron radiation across radio to X-ray wavelengths. It is seen in pulsar nebulae, galaxy jets, and supernova remnants.'},
   {q:'Which part of the EM spectrum penetrates dust clouds best, allowing us to see the center of the Milky Way?',choices:['Visible light','Ultraviolet','Infrared and radio','X-rays'],ans:2,exp:'Dust grains scatter and absorb visible and UV light but are much more transparent to infrared and radio waves. Infrared telescopes like Spitzer and JWST, and radio telescopes, can peer through the 26,000 light-years of dust between us and the galactic center.'},
   {q:'The relationship E = hf means that as frequency increases, photon energy:',choices:['Decreases proportionally','Stays the same','Increases proportionally','Doubles every octave'],ans:2,exp:'E = hf is Planck\'s equation: energy (E) equals Planck\'s constant (h = 6.626 × 10⁻³⁴ J·s) times frequency (f). A direct proportion — doubling frequency doubles photon energy. This is why gamma rays (highest frequency) are the most energetic and dangerous.'},
+  // 10 easier questions
+  {q:'Which type of electromagnetic radiation has the LONGEST wavelength?',choices:['Gamma rays','X-rays','Visible light','Radio waves'],ans:3,exp:'Radio waves have wavelengths from about 1 mm to over 100 km — the longest in the EM spectrum. They carry the least energy per photon.'},
+  {q:'What color of visible light has the longest wavelength?',choices:['Violet','Green','Yellow','Red'],ans:3,exp:'Red light has a wavelength of about 620–700 nm, the longest in the visible range. Violet has the shortest visible wavelength (~380–450 nm).'},
+  {q:'What type of EM radiation does a TV remote control use to send signals?',choices:['Radio waves','Infrared','Ultraviolet','Microwaves'],ans:1,exp:'TV remotes emit pulses of infrared light (around 940 nm) that are detected by a sensor on the TV. Your eyes can\'t see it, but a smartphone camera can!'},
+  {q:'What type of EM radiation is responsible for causing sunburns?',choices:['Infrared','Visible light','Ultraviolet','Microwaves'],ans:2,exp:'Ultraviolet (UV) radiation from the Sun has enough energy to damage DNA in skin cells, causing sunburn. Sunscreen absorbs or reflects UV before it can penetrate the skin.'},
+  {q:'Which of the following correctly orders EM waves from LOWEST to HIGHEST energy?',choices:['Gamma → X-ray → UV → Visible','Radio → Microwave → Infrared → Visible','Visible → X-ray → Radio → Gamma','UV → Infrared → Radio → Microwave'],ans:1,exp:'Energy increases with frequency (and decreasing wavelength): Radio < Microwave < Infrared < Visible < UV < X-ray < Gamma. Radio photons are the least energetic; gamma photons are the most.'},
+  {q:'What is the term for the distance from one wave crest to the next?',choices:['Amplitude','Frequency','Wavelength','Period'],ans:2,exp:'Wavelength (symbol λ) is the distance between two consecutive identical points on a wave — for example, crest to crest. It is measured in meters (or nm for light).'},
+  {q:'Compared to visible light, microwaves have a _____ wavelength.',choices:['Shorter','The same','Longer','Variable'],ans:2,exp:'Microwaves have wavelengths from about 1 mm to 1 m — much longer than visible light (400–700 nm). Longer wavelength means lower frequency and less energy per photon.'},
+  {q:'Which type of EM radiation is used in hospital imaging to see bones inside the body?',choices:['Gamma rays','Microwaves','Infrared','X-rays'],ans:3,exp:'X-rays (wavelength ~0.01–10 nm) pass through soft tissue but are absorbed by dense bone, creating shadow images. Medical X-ray machines produce them at lower energies than the X-rays studied in astronomy.'},
+  {q:'All electromagnetic waves travel at the same speed in a vacuum. What is that speed?',choices:['Sound speed (~343 m/s)','Half the speed of light','The speed of light (~300,000 km/s)','Depends on wavelength'],ans:2,exp:'All EM radiation travels at c = 299,792,458 m/s in a vacuum. This is a fundamental constant of nature. Different wavelengths DO slow by different amounts inside materials, but in space they all travel at exactly c.'},
+  {q:'Which NASA telescope is famous for capturing ultraviolet images of stars and galaxies?',choices:['Chandra X-ray Observatory','Hubble Space Telescope','Arecibo Radio Telescope','Spitzer Space Telescope'],ans:1,exp:'The Hubble Space Telescope observes mainly in ultraviolet and visible light (and some near-infrared). Its UV capability lets it image hot young stars, supernova remnants, and galaxy disks invisible from the ground, since Earth\'s atmosphere blocks UV.'},
 ];
 
 let emInitialized=false, currentBandIdx=3, emWaveAnim=null;
-let emQuizAnswered=[], emQuizScore=0;
+let emQuizAnswered=[], emQuizScore=0, activeQuiz=[];
+
+function pickActiveQuiz(){
+  const shuffled=[...EM_QUIZ].sort(()=>Math.random()-0.5);
+  activeQuiz=shuffled.slice(0,5);
+  emQuizAnswered=new Array(5).fill(null);
+  emQuizScore=0;
+}
 
 function launchEM(){
   const name=document.getElementById('studentName').value.trim();
@@ -1654,6 +1689,7 @@ function initEM(){
   buildEMCompareGrid();
   showEMBand(3); // start on visible
   buildEMAstroCards();
+  pickActiveQuiz();
   buildEMQuiz();
 }
 
@@ -1806,7 +1842,7 @@ function buildEMAstroCards(){
 function buildEMQuiz(){
   const cont=document.getElementById('emQuizContainer');
   if(!cont) return;
-  cont.innerHTML=EM_QUIZ.map((q,qi)=>`
+  cont.innerHTML=activeQuiz.map((q,qi)=>`
     <div class="em-quiz-q" id="emq-${qi}">
       <p><strong style="color:#ffe566;font-family:Orbitron,monospace;font-size:9px;">Q${qi+1}.</strong> ${q.q}</p>
       <div class="em-quiz-choices">
@@ -1819,7 +1855,7 @@ function buildEMQuiz(){
 function answerEMQuiz(qi,ci){
   if(emQuizAnswered[qi]!==null) return;
   emQuizAnswered[qi]=ci;
-  const q=EM_QUIZ[qi];
+  const q=activeQuiz[qi];
   const correct=ci===q.ans;
   if(correct) emQuizScore++;
   // Style choices
@@ -1836,18 +1872,24 @@ function answerEMQuiz(qi,ci){
   // Update score
   const answered=emQuizAnswered.filter(a=>a!==null).length;
   document.getElementById('emQuizScore').textContent=`SCORE: ${emQuizScore} / ${answered}`;
+  if(answered===activeQuiz.length) showEMQuizComplete();
+}
+
+function showEMQuizComplete(){
+  document.getElementById('qcScore').textContent=`${emQuizScore} / ${activeQuiz.length}`;
+  document.getElementById('qcStudent').textContent=studentName+' · Period '+studentPeriod;
+  setTimeout(()=>document.getElementById('emQuizComplete').classList.add('show'),600);
 }
 
 function resetEMQuiz(){
-  emQuizAnswered=new Array(EM_QUIZ.length).fill(null);
-  emQuizScore=0;
+  document.getElementById('emQuizComplete').classList.remove('show');
+  pickActiveQuiz();
   document.getElementById('emQuizScore').textContent='SCORE: 0 / 0';
   buildEMQuiz();
 }
 
 function cheatCompleteEM(){
-  // Auto-answer all quiz questions correctly
-  EM_QUIZ.forEach((_,qi)=>{if(emQuizAnswered[qi]===null) answerEMQuiz(qi,EM_QUIZ[qi].ans);});
+  activeQuiz.forEach((_,qi)=>{if(emQuizAnswered[qi]===null) answerEMQuiz(qi,activeQuiz[qi].ans);});
   showEMTab('quiz');
 }
 
