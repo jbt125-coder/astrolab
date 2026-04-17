@@ -726,7 +726,7 @@ function cheatCompleteMag(){
 // DIRECTIONS POPUP
 // ══════════════════════════════════════════════════
 function showDirections(config, cb){
-  document.getElementById('dirIcon').textContent=config.icon;
+  document.getElementById('dirIcon').innerHTML=config.icon;
   document.getElementById('dirTitle').textContent=config.title;
   document.getElementById('dirSubtitle').textContent=config.subtitle;
   const body=document.getElementById('dirBody');
@@ -751,7 +751,7 @@ function launchHR(){
   setTimeout(()=>{
     if(!hrInitialized){initHR();}
     showDirections({
-      icon:'&#11088;',
+      icon:'⭐',
       title:'HR DIAGRAM',
       subtitle:'STELLAR CLASSIFICATION LAB',
       steps:[
@@ -777,7 +777,7 @@ function launchMag(){
   showMagTab('apparent');
   if(!magInitialized) initMag();
   showDirections({
-    icon:'&#10024;',
+    icon:'✨',
     title:'MAGNITUDE & LUMINOSITY',
     subtitle:'BRIGHTNESS, DISTANCE & POWER',
     steps:[
@@ -1668,7 +1668,7 @@ function launchEM(){
   showScreen('emScreen');
   if(!emInitialized){initEM();}
   showDirections({
-    icon:'&#127752;',
+    icon:'🌈',
     title:'EM SPECTRUM',
     subtitle:'ELECTROMAGNETIC RADIATION',
     steps:[
